@@ -1,0 +1,6 @@
+{
+  "name": "The Legend of Zelda Fan Club & AI Rescue Guide",
+  "description": "An online Legend of Zelda fan club platform with latest news, a game lore database, user submissions with Creative Commons tokenization, and an interactive AI game guide with a screenshot/prompt-based Rescue Me assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

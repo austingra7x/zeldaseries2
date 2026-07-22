@@ -1,0 +1,134 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email.lower() == 'austingra7x@gmail.com'
+        || request.auth.token.email == 'AustinGrA7X@gmail.com'
+        || exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Entity Validations
+    function isValidNews(data) {
+      return data.id is string && data.id.size() <= 128
+          && data.title is string && data.title.size() <= 256
+          && data.summary is string && data.summary.size() <= 2000
+          && data.content is string && data.content.size() <= 50000
+          && data.date is string && data.date.size() <= 64
+          && data.category is string && data.category.size() <= 64
+          && data.imageUrl is string && data.imageUrl.size() <= 500000
+          && (!('galleryImages' in data) || data.galleryImages == null || data.galleryImages is list);
+    }
+
+    function isValidLore(data) {
+      return data.id is string && data.id.size() <= 128
+          && data.title is string && data.title.size() <= 256
+          && data.game is string && data.game.size() <= 256
+          && data.category is string && data.category.size() <= 64
+          && data.description is string && data.description.size() <= 50000
+          && data.imageUrl is string && data.imageUrl.size() <= 2048;
+    }
+
+    function isValidSubmission(data) {
+      return data.id is string && data.id.size() <= 128
+          && data.author is string && data.author.size() <= 128
+          && data.title is string && data.title.size() <= 256
+          && data.type is string && data.type.size() <= 64
+          && data.description is string && data.description.size() <= 50000
+          && data.date is string && data.date.size() <= 64
+          && data.tokenized is bool
+          && data.likes is int && data.likes >= 0;
+    }
+
+    function isValidComment(data) {
+      return data.id is string && data.id.size() <= 128
+          && data.targetId is string && data.targetId.size() <= 128
+          && data.targetType is string && data.targetType.size() <= 64
+          && data.authorName is string && data.authorName.size() <= 128
+          && data.authorId is string && data.authorId.size() <= 128
+          && data.content is string && data.content.size() <= 5000
+          && data.date is string && data.date.size() <= 64
+          && data.timestamp is int;
+    }
+
+    function isValidSidebarBlock(data) {
+      return data.id is string && data.id.size() <= 128
+          && data.title is string && data.title.size() <= 256
+          && data.type is string && (data.type == 'text' || data.type == 'html' || data.type == 'link')
+          && data.content is string && data.content.size() <= 50000
+          && (!('linkUrl' in data) || data.linkUrl == null || (data.linkUrl is string && data.linkUrl.size() <= 2048))
+          && data.order is int;
+    }
+
+    // Match blocks
+    match /sidebarBlocks/{blockId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidId(blockId) && isValidSidebarBlock(incoming());
+      allow delete: if isAdmin() && isValidId(blockId);
+    }
+
+    match /news/{newsId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidId(newsId) && isValidNews(incoming());
+      allow delete: if isAdmin() && isValidId(newsId);
+    }
+
+    match /lore/{loreId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidId(loreId) && isValidLore(incoming());
+      allow delete: if isAdmin() && isValidId(loreId);
+    }
+
+    match /submissions/{submissionId} {
+      allow read: if true;
+      allow create: if isSignedIn() 
+          && isValidId(submissionId)
+          && isValidSubmission(incoming());
+      
+      allow update: if isSignedIn()
+          && isValidSubmission(incoming())
+          && (
+            // Action 1: Like
+            (incoming().likes == existing().likes + 1 && incoming().diff(existing()).affectedKeys().hasOnly(['likes']))
+            ||
+            // Action 2: Tokenize
+            (existing().tokenized == false && incoming().tokenized == true && incoming().diff(existing()).affectedKeys().hasOnly(['tokenized', 'tokenDetails']))
+          );
+
+      allow delete: if isAdmin(); // Admins can moderate submissions
+    }
+
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isSignedIn()
+          && isValidId(commentId)
+          && isValidComment(incoming())
+          && incoming().authorId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isSignedIn() && existing().authorId == request.auth.uid;
+    }
+  }
+}

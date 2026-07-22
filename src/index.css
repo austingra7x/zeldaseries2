@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Cinzel", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-zelda-gold: #B8860B;
+  --color-zelda-gold-dark: #8C6B30;
+  --color-zelda-green-deep: #F4EFE1;
+  --color-zelda-green-forest: #2D4C1E;
+  --color-zelda-green-light: #5A5A40;
+  --color-zelda-green-neon: #06B6D4;
+  --color-zelda-emerald: #2D4C1E;
+  
+  --color-zelda-charcoal: #2D2A22;
+  --color-zelda-beige-card: #EAE2CF;
+  --color-zelda-border-sand: #D9C8A9;
+}
+
+/* Custom Zelda Scrollbar and Ambient Utilities */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F4EFE1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D9C8A9;
+  border-radius: 5px;
+  border: 2px solid #F4EFE1;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B8860B;
+}
+
+/* Medieval gold borders and ambient glow */
+.zelda-gold-glow {
+  box-shadow: 0 4px 20px rgba(184, 134, 11, 0.15);
+}
+
+.zelda-green-glow {
+  box-shadow: 0 4px 20px rgba(45, 76, 30, 0.15);
+}
+
+.zelda-border {
+  border: 2px solid #B8860B;
+  border-image: linear-gradient(to bottom, #B8860B, #8C6B30, #5A5A40) 1;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
