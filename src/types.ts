@@ -12,6 +12,60 @@ export interface NewsItem {
   category: 'game' | 'movie' | 'community';
   imageUrl: string;
   galleryImages?: string[];
+  // SEO & E-E-A-T Metadata
+  seoTitle?: string;
+  metaDescription?: string;
+  focusKeywords?: string[];
+  canonicalUrl?: string;
+  jsonLdSchema?: string;
+  authorByline?: string;
+  eeatScore?: number;
+  eeatDetails?: {
+    score: number;
+    expertiseNotes: string;
+    factCheckStatus: string;
+    citationSources: string[];
+    editorialDisclosure?: string;
+  };
+  rssReferenceUrl?: string;
+  rssSourceTitle?: string;
+  rssPublishDate?: string;
+  likes?: number;
+}
+
+export interface RssFeedItem {
+  id: string;
+  title: string;
+  link: string;
+  pubDate: string;
+  snippet: string;
+  source: string;
+  guid?: string;
+}
+
+export interface GeneratedSeoNews {
+  title: string;
+  seoTitle: string;
+  summary: string;
+  metaDescription: string;
+  focusKeywords: string[];
+  category: 'game' | 'movie' | 'community';
+  contentHtml: string;
+  imageUrl: string;
+  galleryImages: string[];
+  canonicalUrl: string;
+  jsonLdSchema: string;
+  authorByline: string;
+  eeatDetails: {
+    score: number;
+    expertiseNotes: string;
+    factCheckStatus: string;
+    citationSources: string[];
+    editorialDisclosure: string;
+  };
+  rssReferenceUrl: string;
+  rssSourceTitle: string;
+  rssPublishDate: string;
 }
 
 export interface LoreEntry {
@@ -23,7 +77,7 @@ export interface LoreEntry {
   imageUrl: string;
 }
 
-export type SubmissionType = 'art' | 'video' | 'literature' | 'review' | 'memorabilia';
+export type SubmissionType = 'art' | 'video' | 'literature' | 'review' | 'memorabilia' | 'fangame' | 'theory' | 'nft' | 'avatar';
 
 export interface TokenDetails {
   tokenId: string;
@@ -83,7 +137,7 @@ export interface Comment {
 export interface SidebarBlock {
   id: string;
   title: string;
-  type: 'text' | 'html' | 'link';
+  type: 'text' | 'html' | 'link' | 'movie-tracker';
   content: string;
   linkUrl?: string;
   order: number;

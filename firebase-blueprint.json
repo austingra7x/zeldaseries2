@@ -11,7 +11,8 @@
         "content": { "type": "string" },
         "date": { "type": "string" },
         "category": { "type": "string" },
-        "imageUrl": { "type": "string" }
+        "imageUrl": { "type": "string" },
+        "likes": { "type": "integer" }
       },
       "required": ["id", "title", "summary", "content", "date", "category", "imageUrl"]
     },

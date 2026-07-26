@@ -40,7 +40,8 @@ service cloud.firestore {
           && data.date is string && data.date.size() <= 64
           && data.category is string && data.category.size() <= 64
           && data.imageUrl is string && data.imageUrl.size() <= 500000
-          && (!('galleryImages' in data) || data.galleryImages == null || data.galleryImages is list);
+          && (!('galleryImages' in data) || data.galleryImages == null || data.galleryImages is list)
+          && (!('likes' in data) || data.likes == null || (data.likes is int && data.likes >= 0));
     }
 
     function isValidLore(data) {
@@ -92,7 +93,15 @@ service cloud.firestore {
 
     match /news/{newsId} {
       allow read: if true;
-      allow create, update: if isAdmin() && isValidId(newsId) && isValidNews(incoming());
+      allow create: if (isAdmin() || isSignedIn()) && isValidId(newsId) && isValidNews(incoming());
+      allow update: if isValidId(newsId) && isValidNews(incoming()) && (
+        isAdmin() || (
+          isSignedIn() && (
+            (incoming().likes == existing().likes + 1 && incoming().diff(existing()).affectedKeys().hasOnly(['likes'])) ||
+            (!('likes' in existing()) && incoming().likes >= 1 && incoming().diff(existing()).affectedKeys().hasOnly(['likes']))
+          )
+        )
+      );
       allow delete: if isAdmin() && isValidId(newsId);
     }
 
