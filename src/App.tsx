@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Compass, 
   BookOpen, 
@@ -66,6 +66,9 @@ import { CreationContentRenderer } from './components/CreationContentRenderer';
 import { NewsGalleryViewer } from './components/NewsGalleryViewer';
 import { RssNewsGeneratorSection } from './components/RssNewsGeneratorSection';
 import { FooterPageViews, FooterPageType } from './components/FooterPageViews';
+import { ArchivesSection } from './components/ArchivesSection';
+import { OcarinaSidebarWidget } from './components/OcarinaSidebarWidget';
+import { FanPortalSection } from './components/portal/FanPortalSection';
 import { 
   auth, 
   db, 
@@ -123,83 +126,195 @@ export default function App() {
       title: 'Legend of Zelda Live-Action Movie: Wes Ball Targets "Live-Action Miyazaki" Vibe',
       summary: 'Director Wes Ball shares exciting updates about the upcoming live-action Zelda film, revealing plans to create a grounded, whimsical adventure inspired by Studio Ghibli.',
       content: `<p>Exciting news has emerged from the development of the upcoming live-action <strong>Legend of Zelda</strong> film. In a recent interview, director <strong>Wes Ball</strong> (known for the <em>Maze Runner</em> trilogy and <em>Kingdom of the Planet of the Apes</em>) discussed his ambitious vision for Hyrule's cinematic debut.</p><h3>The Miyazaki Aesthetic</h3><p>Ball expressed his deep reverence for the franchise, stating that he does not want the movie to feel like a generic <em>Lord of the Rings</em> clone. Instead, he is aiming for a <em>"live-action Miyazaki"</em> aesthetic—a world filled with wonder, rich history, beautiful landscapes, and a serious but whimsical heart.</p><blockquote>"It's going to be awesome. My whole life has led to this moment. I love this franchise. We are working hard to make something truly special for fans and newcomers alike." — Wes Ball</blockquote><h3>Key Production Details</h3><ul><li><strong>Co-Producers:</strong> Shigeru Miyamoto and Avi Arad</li><li><strong>Production Studio:</strong> Nintendo & Sony Pictures Entertainment</li><li><strong>Cinematic Focus:</strong> Physical environments with magical Studio Ghibli-inspired atmosphere</li></ul>`,
-      date: '2026-07-15',
+      date: '2026-07-25',
       category: 'movie',
       imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=800&q=80',
-      likes: 34,
+      likes: 88,
     },
     {
       id: 'n2',
-      title: 'Casting Rumors Swirl: Who Will Play Link, Zelda, and Ganondorf?',
-      summary: 'Hollywood insiders drop potential names for the legendary trio in the upcoming live-action movie. Fans debate physical traits and acting pedigree.',
-      content: `<p>As pre-production ramps up for the <strong>Legend of Zelda</strong> live-action adaptation, casting rumors are spreading like wildfire across Hyrule fan communities.</p><h3>The Hero & The Princess</h3><p>Insiders suggest that Nintendo and Sony are searching for an athletic, expressive, relatively fresh face to portray the silent hero <strong>Link</strong>, prioritizing non-verbal physical acting.</p><p>For <strong>Princess Zelda</strong>, names like <em>Saoirse Ronan</em> and <em>Hunter Schafer</em> are frequently discussed in fan-casting circles, with producers reportedly looking for someone who can balance royal grace with active, scientific curiosity.</p><h3>The Demon King</h3><p>As for the menacing <strong>Ganondorf</strong>, fans are clamoring for towering actors with dramatic intensity, with <em>Idris Elba</em> and <em>Jason Momoa</em> leading fan expectations. Wes Ball has hinted that the cast will feature a blend of established talent and exciting newcomers.</p>`,
-      date: '2026-07-01',
-      category: 'movie',
-      imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80',
-      likes: 28,
-    },
-    {
-      id: 'n3',
       title: 'Zelda Symphonic Concert "Echoes of Hyrule" Announces 2026 Tour Dates',
       summary: 'A legendary concert tour featuring live orchestral arrangements of Koji Kondo\'s historic Zelda themes will tour major global arenas later this year.',
       content: `<p>Nintendo has officially announced <strong>"Echoes of Hyrule: The Legend of Zelda Concert Series"</strong> for late 2026.</p><p>The global tour will feature a <strong>90-piece symphony orchestra</strong> performing spectacular arrangements spanning the entire 40-year history of the series, created under the guidance of legendary composer Koji Kondo.</p><h3>Featured Games & Experiences</h3><ul><li>Breathtaking suites from <em>Ocarina of Time</em>, <em>Wind Waker</em>, <em>Breath of the Wild</em>, and <em>Tears of the Kingdom</em></li><li>High-definition gameplay footage projected onto a massive arena screen</li><li>Special VIP packages including replica Ocarina and collectible concert programs</li></ul>`,
-      date: '2026-07-18',
+      date: '2026-07-22',
       category: 'game',
       imageUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=800&q=80',
-      likes: 52,
+      likes: 64,
+    },
+    {
+      id: 'n3',
+      title: 'Casting Rumors Swirl: Who Will Play Link, Zelda, and Ganondorf?',
+      summary: 'Hollywood insiders drop potential names for the legendary trio in the upcoming live-action movie. Fans debate physical traits and acting pedigree.',
+      content: `<p>As pre-production ramps up for the <strong>Legend of Zelda</strong> live-action adaptation, casting rumors are spreading like wildfire across Hyrule fan communities.</p><h3>The Hero & The Princess</h3><p>Insiders suggest that Nintendo and Sony are searching for an athletic, expressive, relatively fresh face to portray the silent hero <strong>Link</strong>, prioritizing non-verbal physical acting.</p><p>For <strong>Princess Zelda</strong>, names like <em>Saoirse Ronan</em> and <em>Hunter Schafer</em> are frequently discussed in fan-casting circles, with producers reportedly looking for someone who can balance royal grace with active, scientific curiosity.</p><h3>The Demon King</h3><p>As for the menacing <strong>Ganondorf</strong>, fans are clamoring for towering actors with dramatic intensity, with <em>Idris Elba</em> and <em>Jason Momoa</em> leading fan expectations. Wes Ball has hinted that the cast will feature a blend of established talent and exciting newcomers.</p>`,
+      date: '2026-07-18',
+      category: 'movie',
+      imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80',
+      likes: 42,
     },
     {
       id: 'n4',
       title: 'Community Spotlight: Fan-Made "Zelda Maker" Level Editor Gains Traction',
       summary: 'An incredibly detailed, non-profit fan project allows players to design their own 2D classic Zelda dungeons and share them with the club.',
       content: `<p>The Zelda fan community has done it again! A group of dedicated developers has released an alpha build of a non-commercial, copyright-friendly level editor inspired by classic 8-bit and 16-bit Zelda games, dubbed <strong>"Hyrule Builder"</strong>.</p><p>The engine allows users to place blocks, trigger switches, arrange puzzles, and customize custom dungeon bosses. Over <strong>5,000 fan dungeons</strong> have already been uploaded by creative players in the first 48 hours.</p>`,
-      date: '2026-07-12',
+      date: '2026-07-15',
       category: 'community',
       imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
-      likes: 41,
+      likes: 51,
+    },
+    {
+      id: 'n5',
+      title: 'Echoes of Wisdom Expansion Speculation: New Rift Mysteries Uncovered',
+      summary: 'Data analysts examine recent gameplay updates and lore hints suggesting new rift challenges coming to the Wisdom timeline.',
+      content: `<p>Recent deep-dives into <em>The Legend of Zelda: Echoes of Wisdom</em> have revealed hidden dialogue triggers and lingering rift anchors. Scribes speculate an upcoming content patch or Master Quest difficulty mode may be announced during the next Direct broadcast.</p>`,
+      date: '2026-07-10',
+      category: 'game',
+      imageUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80',
+      likes: 37,
+    },
+    {
+      id: 'n6',
+      title: 'Tears of the Kingdom Speedrun Record Broken at Summer Games Done Quick',
+      summary: 'Runner "HylianSwift" smashes the TOTK Any% speedrun record live on stage, completing the game in under 42 minutes using innovative recall glitches.',
+      content: `<p>At SGDQ 2026, speedrunner <strong>HylianSwift</strong> set a new world record for <em>Tears of the Kingdom</em> Any% glitch-inclusive category. Utilizing precise Recall launches and Ultrahand weapon dupes, the runner reached Ganondorf's lair in record time, raising over $20,000 for charity in a single run.</p>`,
+      date: '2026-07-05',
+      category: 'community',
+      imageUrl: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
+      likes: 95,
+    },
+    {
+      id: 'n7',
+      title: 'Official Zelda Artbook "Creating a Champion: Deluxe Volume" Announced',
+      summary: 'Dark Horse Comics and Nintendo collaborate on an expanded 500-page hardcover encyclopedia documenting unseen concept sketches from Breath of the Wild and Tears of the Kingdom.',
+      content: `<p>Dark Horse Comics has officially unveiled <strong>The Legend of Zelda: Creating a Champion - Royal Legacy Edition</strong>. This massive 500-page tome contains developer commentaries, early Zonai architecture blueprints, and unused character designs for the Four Champions.</p>`,
+      date: '2026-06-28',
+      category: 'game',
+      imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
+      likes: 48,
+    },
+    {
+      id: 'n8',
+      title: 'Zelda Series Reaches 160 Million Lifetime Sales Milestone',
+      summary: 'Nintendo reports monumental sales figures across four decades of Zelda releases, cementing it as one of gaming history\'s most influential sagas.',
+      content: `<p>In its latest financial briefing, Nintendo confirmed that <em>The Legend of Zelda</em> franchise has officially surpassed <strong>160 million total units sold worldwide</strong> since its debut on the Famicom in 1986. <em>Breath of the Wild</em> and <em>Tears of the Kingdom</em> account for over 50 million copies combined.</p>`,
+      date: '2026-06-20',
+      category: 'game',
+      imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
+      likes: 72,
+    },
+    {
+      id: 'n9',
+      title: 'Live-Action Zelda Film Sets Filming Location in New Zealand National Parks',
+      summary: 'Scouting reports confirm Sony and Nintendo have secured permits to film Hyrule\'s sprawling landscapes in Fiordland National Park and Glenorchy.',
+      content: `<p>Production scouts for the live-action movie have locked in breathtaking filming locations across New Zealand. The lush temperate forests and towering peaks of Fiordland will serve as the real-world backdrop for Faron Woods and Death Mountain.</p>`,
+      date: '2026-06-12',
+      category: 'movie',
+      imageUrl: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80',
+      likes: 61,
+    },
+    {
+      id: 'n10',
+      title: 'Retrospective: 28 Years of Ocarina of Time and Its Architectural Legacy',
+      summary: 'A deep-dive analytical piece exploring how Ocarina of Time established 3D camera locking, targeting, and non-linear dungeon design standards.',
+      content: `<p>Nearly three decades after its 1998 release on Nintendo 64, <em>Ocarina of Time</em> remains a landmark achievement in game design. From Z-targeting to ambient day-night cycles, this retrospective explores how Nintendo EAD created a timeless masterpiece.</p>`,
+      date: '2026-06-01',
+      category: 'game',
+      imageUrl: 'https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?auto=format&fit=crop&w=800&q=80',
+      likes: 83,
     }
   ];
 
   const initialLore: LoreEntry[] = [
     {
       id: 'l1',
-      title: 'The Master Sword',
+      title: 'The Master Sword (Blade of Evil\'s Bane)',
       game: 'Skyward Sword / Ocarina of Time / Breath of the Wild',
-      category: 'item',
+      category: 'gamelore',
       description: 'Forged originally as the Goddess Sword by the goddess Hylia, it was tempered by the Hero of the Skies using the three Sacred Flames to become the Master Sword. Known as the Blade of Evil\'s Bane, it is the only weapon capable of repelling demonic entities and sealing the Demon King Ganon. It rests in sacred pedestals across Hyrule\'s history, guarded by the Lost Woods or the Temple of Time.',
       imageUrl: 'https://images.unsplash.com/photo-1559181567-c3190ca9959b?auto=format&fit=crop&w=800&q=80',
+      releaseYear: '1991',
     },
     {
       id: 'l2',
-      title: 'Princess Zelda',
+      title: 'Princess Zelda & Goddess Hylia Mythos',
       game: 'All Zelda Games',
-      category: 'character',
+      category: 'gamelore',
       description: 'The mortal reincarnation of the Goddess Hylia and the princess of the Kingdom of Hyrule. Zelda is the bearer of the Triforce of Wisdom, granting her immense magical capabilities, prophetic dreams, and holy light. Far from a simple damsel in distress, Zelda is often a cunning commander, a skilled archer, a scholar of ancient technologies, or a mysterious disguise-artist (like Sheik or Tetra).',
       imageUrl: 'https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?auto=format&fit=crop&w=800&q=80',
+      releaseYear: '1986',
     },
     {
       id: 'l3',
-      title: 'The Triforce',
+      title: 'The Sacred Triforce & Divine Relic',
       game: 'Ocarina of Time / A Link to the Past / Wind Waker',
-      category: 'item',
+      category: 'gamelore',
       description: 'A sacred golden relic left behind by the Golden Goddesses—Din (Power), Nayru (Wisdom), and Farore (Courage)—after they created the realm of Hyrule. The Triforce grants any wish to whoever touches it, regardless of whether their intentions are good or evil. If touched by one who does not possess a balanced heart, it splits into three pieces, seeking those who best embody each specific trait.',
       imageUrl: 'https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&w=800&q=80',
+      releaseYear: '1986',
     },
     {
       id: 'l4',
-      title: 'The Lost Woods',
-      game: 'Ocarina of Time / Tears of the Kingdom',
-      category: 'location',
-      description: 'A mysterious, sprawling forest labyrinth that protects the Sacred Pedestal of the Master Sword. Travelers who enter without a guiding spirit or a pure heart find themselves hopelessly lost, eventually transforming into Kokiri forest spirits, skull kids, or wood-like monsters. In several eras, it is watched over by the ancient Great Deku Tree.',
-      imageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=80',
+      title: 'The Legend of Zelda: Tears of the Kingdom',
+      game: 'The Legend of Zelda: Tears of the Kingdom (2023)',
+      category: 'games',
+      subCategory: 'The Legend of Zelda: Tears of the Kingdom (2023)',
+      description: 'In this sequel to Breath of the Wild, Link explores both the vast land of Hyrule and the mysterious sky islands floating above. Equipped with new Zonai abilities like Ultrahand, Fuse, Recall, and Ascend, Link must piece together the mystery of the Upheaval and defeat the resurrected Demon King Ganondorf.',
+      imageUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80',
+      releaseYear: '2023',
     },
     {
       id: 'l5',
-      title: 'The Hero of Time',
-      game: 'Ocarina of Time / Majora\'s Mask',
-      category: 'character',
-      description: 'The legendary incarnation of the hero who pulled the Master Sword from the Pedestal of Time, sleeping for seven years until he was old enough to bear its power. Equipped with the Ocarina of Time, he traversed the streams of history to defeat Ganondorf, only to be sent back to his childhood by Zelda. He later embarked on a personal quest in the parallel land of Termina to stop the falling Moon.',
-      imageUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80',
+      title: 'The Legend of Zelda: Ocarina of Time',
+      game: 'The Legend of Zelda: Ocarina of Time (1998)',
+      category: 'games',
+      subCategory: 'The Legend of Zelda: Ocarina of Time (1998)',
+      description: 'The monumental 3D entry that redefined action-adventure gaming. Link travels seven years into the future using the Master Sword and the Ocarina of Time to awaken the Seven Sages and rescue Hyrule from Ganondorf\'s dark reign.',
+      imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
+      releaseYear: '1998',
+    },
+    {
+      id: 'l6',
+      title: 'Official Link Figma Action Figure (TOTK DX Edition)',
+      game: 'Tears of the Kingdom Merchandise',
+      category: 'merchandise',
+      description: 'A premium articulated action figure produced by Good Smile Company featuring Link in his Zonai tunic, complete with the decayed Master Sword, Hylian Shield, Paraglider, and Ultrahand effect pieces.',
+      imageUrl: 'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=800&q=80',
+      releaseYear: '2024',
+    },
+    {
+      id: 'l7',
+      title: 'Live-Action Zelda Film Production Blueprint & Script',
+      game: 'Nintendo & Sony Live-Action Movie',
+      category: 'movie',
+      description: 'Official production details and director statements regarding the live-action movie adaptation directed by Wes Ball and co-produced by Shigeru Miyamoto and Avi Arad.',
+      imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=800&q=80',
+      releaseYear: '2026',
+    },
+    {
+      id: 'l8',
+      title: 'Hyrule Historia (Official Collector\'s Tome)',
+      game: 'Official Timeline Encyclopedia',
+      category: 'publications',
+      description: 'The definitive collector\'s book published by Dark Horse Comics, revealing the official split Zelda timeline for the first time along with executive producer interviews and full-color concept art.',
+      imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
+      releaseYear: '2011',
+    },
+    {
+      id: 'l9',
+      title: 'Symphony of the Goddesses Global Tour Archives',
+      game: 'Live Orchestra Media',
+      category: 'media',
+      description: 'Historical archive of the official world orchestral tour performing Koji Kondo\'s four-movement symphonies with live game footage.',
+      imageUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=800&q=80',
+      releaseYear: '2026',
+    },
+    {
+      id: 'l10',
+      title: 'Speedrunning Archives & Any% World Records',
+      game: 'Community Archives',
+      category: 'fandom',
+      description: 'A historical record of speedrunning milestones across Ocarina of Time, Wind Waker, Breath of the Wild, and Tears of the Kingdom.',
+      imageUrl: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
+      releaseYear: '2025',
     }
   ];
 
@@ -365,7 +480,7 @@ export default function App() {
   ];
 
   // Navigation & UI State
-  const [activeTab, setActiveTab] = useState<'news' | 'lore' | 'submissions' | 'guide' | 'admin' | 'about' | 'contact' | 'privacy' | 'sitemap'>('news');
+  const [activeTab, setActiveTab] = useState<'news' | 'lore' | 'submissions' | 'guide' | 'portal' | 'admin' | 'about' | 'contact' | 'privacy' | 'sitemap'>('news');
   const [creatorSubTab, setCreatorSubTab] = useState<'feed' | 'submit' | 'all'>('feed');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState<string>('');
@@ -459,6 +574,7 @@ export default function App() {
   const [adminLoreImageUrl, setAdminLoreImageUrl] = useState<string>('');
   const [isEditingLore, setIsEditingLore] = useState<boolean>(false);
   const [newsFilter, setNewsFilter] = useState<string>('all');
+  const [newsCurrentPage, setNewsCurrentPage] = useState<number>(1);
   const [expandedNews, setExpandedNews] = useState<string | null>(null);
 
   // Comments & Share State
@@ -485,6 +601,8 @@ export default function App() {
   const [subType, setSubType] = useState<SubmissionType>('art');
   const [description, setDescription] = useState('');
   const [contentUrl, setContentUrl] = useState('');
+  const [creationGalleryImages, setCreationGalleryImages] = useState<string[]>([]);
+  const [customCreationGalleryUrl, setCustomCreationGalleryUrl] = useState<string>('');
   const [contentBody, setContentBody] = useState('');
   const [tokenize, setTokenize] = useState(false);
   const [copyrightLicense, setCopyrightLicense] = useState('CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike)');
@@ -498,24 +616,37 @@ export default function App() {
   const [isDraggingCreationFile, setIsDraggingCreationFile] = useState(false);
   const creationFileInputRef = useRef<HTMLInputElement>(null);
 
+  // AWS Integration Status State
+  const [awsStatusInfo, setAwsStatusInfo] = useState<{
+    status?: string;
+    provider?: string;
+    region?: string;
+    rawRegion?: string;
+    newsTable?: string;
+    submissionsTable?: string;
+    s3Bucket?: string;
+    lastError?: { message: string; code?: string; table?: string; timestamp?: string } | null;
+  } | null>(null);
+
   // File drag & drop reference
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Image Upload Processing for Fan Creations
+  // Image Upload Processing for Fan Creations (Multi-image Gallery)
   const processCreationImageFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
       setFormError('Please select a valid image file (PNG, JPG, WEBP, GIF).');
       return;
     }
-    if (file.size > 8 * 1024 * 1024) {
-      setFormError('Image file size must be under 8MB.');
+    if (file.size > 20 * 1024 * 1024) {
+      setFormError('Image file size must be under 20MB.');
       return;
     }
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result as string;
       if (result) {
-        setContentUrl(result);
+        setContentUrl((prev) => prev || result);
+        setCreationGalleryImages((prev) => (prev.includes(result) ? prev : [...prev, result]));
         setFormError('');
       }
     };
@@ -523,9 +654,9 @@ export default function App() {
   };
 
   const handleCreationFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processCreationImageFile(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach((file: File) => processCreationImageFile(file));
     }
   };
 
@@ -553,6 +684,18 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  const fetchAwsStatus = async () => {
+    try {
+      const res = await fetch('/api/aws/status');
+      if (res.ok) {
+        const data = await res.json();
+        setAwsStatusInfo(data);
+      }
+    } catch (e) {
+      console.warn('Error fetching AWS status:', e);
+    }
+  };
+
   // Fetch initial data & subscribe to real-time updates for news and submissions
   useEffect(() => {
     fetchNews();
@@ -560,34 +703,16 @@ export default function App() {
     fetchSubmissions();
     fetchSidebarBlocks();
     fetchGuideSettings();
+    fetchAwsStatus();
 
-    // Real-time Firestore sync for news items (e.g. live like counters)
-    const newsQuery = query(collection(db, 'news'));
-    const unsubNews = onSnapshot(newsQuery, (snapshot) => {
-      if (!snapshot.empty) {
-        const liveNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as NewsItem[];
-        setNews(liveNews);
-      }
-    }, (err) => {
-      console.warn('Real-time news listener warning:', err);
-    });
+    // Periodic backend API sync (synced with AWS DynamoDB)
+    const interval = setInterval(() => {
+      fetchNews();
+      fetchSubmissions();
+      fetchAwsStatus();
+    }, 15000);
 
-    // Real-time Firestore sync for user submissions
-    const subQuery = query(collection(db, 'submissions'));
-    const unsubSub = onSnapshot(subQuery, (snapshot) => {
-      if (!snapshot.empty) {
-        let liveSubmissions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as UserSubmission[];
-        liveSubmissions.sort((a, b) => b.id.localeCompare(a.id));
-        setSubmissions(liveSubmissions);
-      }
-    }, (err) => {
-      console.warn('Real-time submissions listener warning:', err);
-    });
-
-    return () => {
-      unsubNews();
-      unsubSub();
-    };
+    return () => clearInterval(interval);
   }, [user]);
 
   // Deep link router for sharing
@@ -703,7 +828,7 @@ export default function App() {
   };
 
   // Comments System Helper Functions
-  const fetchComments = async (targetId: string) => {
+  const fetchComments = useCallback(async (targetId: string) => {
     setCommentsLoading(prev => ({ ...prev, [targetId]: true }));
     try {
       const q = query(
@@ -719,7 +844,7 @@ export default function App() {
     } finally {
       setCommentsLoading(prev => ({ ...prev, [targetId]: false }));
     }
-  };
+  }, []);
 
   const handleAddComment = async (targetId: string, targetType: 'news' | 'lore' | 'submission', e: React.FormEvent) => {
     e.preventDefault();
@@ -746,7 +871,7 @@ export default function App() {
         id: commentId,
         targetId,
         targetType,
-        authorName: user.displayName || user.email || 'Anonymous Ally',
+        authorName: user.displayName || (user.email ? user.email.split('@')[0] : 'Hero of Hyrule'),
         authorId: user.uid,
         authorPhoto: user.photoURL || undefined,
         content: commentText,
@@ -1015,64 +1140,50 @@ export default function App() {
 
   const fetchNews = async () => {
     try {
-      const q = query(collection(db, 'news'));
-      const snapshot = await getDocs(q);
-      let list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as NewsItem[];
-      
-      if (list.length === 0) {
-        list = initialNews;
-        if (isUserAdmin) {
-          for (const item of initialNews) {
-            await setDoc(doc(db, 'news', item.id), item);
-          }
-        }
+      const res = await fetch('/api/news');
+      if (res.ok) {
+        const list = await res.json();
+        setNews(Array.isArray(list) && list.length > 0 ? list : initialNews);
+      } else {
+        setNews(initialNews);
       }
-      setNews(list);
     } catch (e) {
-      console.error('Error fetching news:', e);
+      console.error('Error fetching news from API:', e);
       setNews(initialNews);
     }
   };
 
   const fetchLore = async () => {
     try {
-      const q = query(collection(db, 'lore'));
-      const snapshot = await getDocs(q);
-      let list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as LoreEntry[];
-      
-      if (list.length === 0) {
-        list = initialLore;
-        if (isUserAdmin) {
-          for (const item of initialLore) {
-            await setDoc(doc(db, 'lore', item.id), item);
-          }
-        }
+      const res = await fetch('/api/lore');
+      if (res.ok) {
+        const list = await res.json();
+        setLore(Array.isArray(list) && list.length > 0 ? list : initialLore);
+      } else {
+        setLore(initialLore);
       }
-      setLore(list);
     } catch (e) {
-      console.error('Error fetching lore:', e);
+      console.error('Error fetching lore from API:', e);
       setLore(initialLore);
     }
   };
 
   const fetchSubmissions = async () => {
     try {
-      const q = query(collection(db, 'submissions'));
-      const snapshot = await getDocs(q);
-      let list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as UserSubmission[];
-      
-      if (list.length === 0) {
-        list = initialSubmissions;
-        if (isUserAdmin) {
-          for (const item of initialSubmissions) {
-            await setDoc(doc(db, 'submissions', item.id), item);
-          }
+      const res = await fetch('/api/submissions');
+      if (res.ok) {
+        const list = await res.json();
+        if (Array.isArray(list) && list.length > 0) {
+          list.sort((a: UserSubmission, b: UserSubmission) => b.id.localeCompare(a.id));
+          setSubmissions(list);
+        } else {
+          setSubmissions(initialSubmissions);
         }
+      } else {
+        setSubmissions(initialSubmissions);
       }
-      list.sort((a, b) => b.id.localeCompare(a.id));
-      setSubmissions(list);
     } catch (e) {
-      console.error('Error fetching submissions:', e);
+      console.error('Error fetching submissions from API:', e);
       setSubmissions(initialSubmissions);
     }
   };
@@ -1374,26 +1485,17 @@ export default function App() {
       return;
     }
     try {
-      const newsRef = doc(db, 'news', id);
       const currentArticle = news.find(n => n.id === id);
       if (!currentArticle) return;
       
       const newLikes = (currentArticle.likes || 0) + 1;
-      
-      // Optimistically update local state immediately
       setNews(prev => prev.map(n => n.id === id ? { ...n, likes: newLikes } : n));
 
-      try {
-        await updateDoc(newsRef, {
-          likes: newLikes
-        });
-      } catch (err) {
-        try {
-          await setDoc(newsRef, { ...currentArticle, likes: newLikes }, { merge: true });
-        } catch (setErr) {
-          handleFirestoreError(err, OperationType.UPDATE, `news/${id}`);
-        }
-      }
+      await fetch(`/api/news/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...currentArticle, likes: newLikes }),
+      });
     } catch (e) {
       console.error('Error liking news item:', e);
     }
@@ -1439,13 +1541,18 @@ export default function App() {
         };
       }
 
+      const finalGalleryImages = creationGalleryImages.length > 0 
+        ? creationGalleryImages 
+        : (contentUrl.trim() ? [contentUrl.trim()] : undefined);
+
       const newSubmission: UserSubmission = {
         id: newId,
         author: author.trim(),
         title: title.trim(),
         type: subType,
         description: description.trim(),
-        contentUrl: contentUrl.trim() || undefined,
+        contentUrl: contentUrl.trim() || (finalGalleryImages ? finalGalleryImages[0] : undefined),
+        galleryImages: finalGalleryImages,
         contentBody: contentBody.trim() || undefined,
         date: now.split('T')[0],
         tokenized: !!tokenize,
@@ -1456,10 +1563,14 @@ export default function App() {
         newSubmission.tokenDetails = tokenDetails;
       }
 
-      try {
-        await setDoc(doc(db, 'submissions', newId), newSubmission);
-      } catch (err) {
-        handleFirestoreError(err, OperationType.CREATE, `submissions/${newId}`);
+      const apiRes = await fetch('/api/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSubmission),
+      });
+
+      if (!apiRes.ok) {
+        throw new Error('Failed to post submission to server storage.');
       }
 
       await fetchSubmissions();
@@ -1467,6 +1578,8 @@ export default function App() {
       setTitle('');
       setDescription('');
       setContentUrl('');
+      setCreationGalleryImages([]);
+      setCustomCreationGalleryUrl('');
       setContentBody('');
       setTokenize(false);
     } catch (err: any) {
@@ -1602,34 +1715,20 @@ export default function App() {
     };
 
     try {
-      // 1. Try to save to Firestore directly if signed in
-      let firestoreSuccess = false;
-      if (user) {
-        try {
-          await setDoc(doc(db, 'news', id), itemData);
-          firestoreSuccess = true;
-        } catch (fsErr) {
-          console.warn('Firestore write rejected by rules (expected for sandbox modes):', fsErr);
-        }
+      // Save to Backend REST API (Synced with AWS DynamoDB)
+      const endpoint = isEditingNews ? `/api/news/${id}` : '/api/news';
+      const method = isEditingNews ? 'PUT' : 'POST';
+      const apiRes = await fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itemData),
+      });
+
+      if (!apiRes.ok) {
+        throw new Error('Failed to save to backend server database');
       }
 
-      // 2. Sync to the Backend REST API
-      try {
-        const endpoint = isEditingNews ? `/api/news/${id}` : '/api/news';
-        const method = isEditingNews ? 'PUT' : 'POST';
-        const apiRes = await fetch(endpoint, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(itemData),
-        });
-        if (!apiRes.ok && !firestoreSuccess) {
-          throw new Error('Failed to save to backend database');
-        }
-      } catch (apiErr) {
-        console.warn('Backend API sync failed:', apiErr);
-      }
-
-      // 3. Update client state
+      // Update client state
       if (isEditingNews) {
         setNews(prev => prev.map(n => n.id === id ? itemData : n));
         setAdminSuccess(`Chronicle "${adminNewsTitle}" successfully engraved and updated!`);
@@ -1647,7 +1746,7 @@ export default function App() {
   // Publish AI-Generated RSS SEO News Entry directly
   const handlePublishGeneratedNews = async (newsData: any): Promise<boolean> => {
     try {
-      const id = `n_${Date.now()}`;
+      const id = newsData.id || `n_${Date.now()}`;
       const itemData: NewsItem = {
         id,
         title: newsData.title,
@@ -1671,26 +1770,18 @@ export default function App() {
         likes: 0,
       };
 
-      if (user) {
-        try {
-          await setDoc(doc(db, 'news', id), itemData);
-        } catch (fsErr) {
-          console.warn('Firestore write for generated news fallback:', fsErr);
-        }
-      }
+      const apiRes = await fetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itemData),
+      });
 
-      try {
-        await fetch('/api/news', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(itemData),
-        });
-      } catch (apiErr) {
-        console.warn('Backend REST API write failed:', apiErr);
+      if (!apiRes.ok) {
+        console.warn('Backend REST API write returned non-ok status');
       }
 
       setNews(prev => [itemData, ...prev]);
-      setAdminSuccess(`Real-time SEO story "${newsData.title}" successfully published!`);
+      setAdminSuccess(`Real-time SEO story "${newsData.title}" successfully published to AWS DynamoDB storage!`);
       return true;
     } catch (err) {
       console.error('Error publishing generated news:', err);
@@ -1705,23 +1796,9 @@ export default function App() {
     setAdminSuccess('');
 
     try {
-      let firestoreSuccess = false;
-      if (user) {
-        try {
-          await deleteDoc(doc(db, 'news', id));
-          firestoreSuccess = true;
-        } catch (fsErr) {
-          console.warn('Firestore delete failed:', fsErr);
-        }
-      }
-
-      try {
-        const apiRes = await fetch(`/api/news/${id}`, { method: 'DELETE' });
-        if (!apiRes.ok && !firestoreSuccess) {
-          throw new Error('Failed to delete from backend API');
-        }
-      } catch (apiErr) {
-        console.warn('Backend API delete failed:', apiErr);
+      const apiRes = await fetch(`/api/news/${id}`, { method: 'DELETE' });
+      if (!apiRes.ok) {
+        throw new Error('Failed to delete from backend API');
       }
 
       setNews(prev => prev.filter(n => n.id !== id));
@@ -1893,16 +1970,18 @@ export default function App() {
   };
 
   // Filtered lists with global search support
-  const filteredNews = news.filter(item => {
-    const matchesCategory = newsFilter === 'all' || item.category === newsFilter;
-    const query = globalSearch.trim().toLowerCase();
-    const matchesSearch = !query || 
-      item.title.toLowerCase().includes(query) ||
-      (item.summary && item.summary.toLowerCase().includes(query)) ||
-      (item.content && item.content.toLowerCase().includes(query)) ||
-      (item.authorByline && item.authorByline.toLowerCase().includes(query));
-    return matchesCategory && matchesSearch;
-  });
+  const filteredNews = news
+    .filter(item => {
+      const matchesCategory = newsFilter === 'all' || item.category === newsFilter;
+      const query = globalSearch.trim().toLowerCase();
+      const matchesSearch = !query || 
+        item.title.toLowerCase().includes(query) ||
+        (item.summary && item.summary.toLowerCase().includes(query)) ||
+        (item.content && item.content.toLowerCase().includes(query)) ||
+        (item.authorByline && item.authorByline.toLowerCase().includes(query));
+      return matchesCategory && matchesSearch;
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const filteredLore = lore.filter(item => {
     const matchesCategory = loreCategory === 'all' || item.category === loreCategory;
@@ -2026,7 +2105,7 @@ export default function App() {
                       {user.displayName ? user.displayName.substring(0, 1) : 'U'}
                     </div>
                   )}
-                  <span className="font-serif max-w-[100px] truncate font-medium text-white">{user.displayName || user.email}</span>
+                  <span className="font-serif max-w-[100px] truncate font-medium text-white">{user.displayName || (user.email ? user.email.split('@')[0] : 'Hero of Hyrule')}</span>
                   <button 
                     onClick={handleLogout}
                     className="ml-1 text-[10px] bg-red-600/30 hover:bg-red-600/60 text-red-200 font-semibold font-serif uppercase tracking-wider py-0.5 px-2 rounded border border-red-500/30 transition-all cursor-pointer"
@@ -2084,7 +2163,7 @@ export default function App() {
               }`}
             >
               <BookOpen className="w-4 h-4 text-amber-200" />
-              <span>Lore Labyrinth</span>
+              <span>Archives</span>
             </button>
 
             <button 
@@ -2111,6 +2190,19 @@ export default function App() {
             >
               <Compass className="w-4 h-4 text-amber-200" />
               <span>AI Game Guide</span>
+            </button>
+
+            <button 
+              id="tab-portal"
+              onClick={() => setActiveTab('portal')}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-serif font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                activeTab === 'portal' 
+                  ? 'bg-gradient-to-r from-zelda-gold to-yellow-600 text-white shadow-md border border-yellow-300/40' 
+                  : 'text-[#EAE2CF] hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <Gamepad2 className="w-4 h-4 text-amber-200" />
+              <span>Fan Portal</span>
             </button>
 
             {isUserAdmin && (
@@ -2165,7 +2257,7 @@ export default function App() {
                     }`}
                   >
                     <BookOpen className="w-4 h-4 text-amber-200" />
-                    <span>Lore Labyrinth</span>
+                    <span>Archives</span>
                   </button>
 
                   <button 
@@ -2192,6 +2284,19 @@ export default function App() {
                   >
                     <Compass className="w-4 h-4 text-amber-200" />
                     <span>AI Game Guide</span>
+                  </button>
+
+                  <button 
+                    id="tab-portal-mobile"
+                    onClick={() => { setActiveTab('portal'); setMobileMenuOpen(false); }}
+                    className={`w-full min-h-[44px] flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-serif font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                      activeTab === 'portal' 
+                        ? 'bg-zelda-gold text-white shadow-md' 
+                        : 'bg-white/5 text-[#EAE2CF] hover:bg-white/10'
+                    }`}
+                  >
+                    <Gamepad2 className="w-4 h-4 text-amber-200" />
+                    <span>Fan Portal</span>
                   </button>
 
                   {isUserAdmin && (
@@ -2244,7 +2349,7 @@ export default function App() {
                               {user.displayName ? user.displayName.substring(0, 1) : 'U'}
                             </div>
                           )}
-                          <span className="text-xs text-white max-w-[140px] truncate">{user.displayName || user.email}</span>
+                          <span className="text-xs text-white max-w-[140px] truncate">{user.displayName || (user.email ? user.email.split('@')[0] : 'Hero of Hyrule')}</span>
                         </div>
                         <button 
                           onClick={handleLogout}
@@ -2589,7 +2694,7 @@ export default function App() {
                     {['all', 'movie', 'game', 'community'].map((cat) => (
                       <button
                         key={cat}
-                        onClick={() => setNewsFilter(cat)}
+                        onClick={() => { setNewsFilter(cat); setNewsCurrentPage(1); }}
                         className={`px-3 py-1.5 rounded-md text-xs font-serif uppercase tracking-wider transition-all cursor-pointer ${
                           newsFilter === cat 
                             ? 'bg-zelda-gold text-white font-bold' 
@@ -2604,114 +2709,267 @@ export default function App() {
 
                 {/* News Layout with Wrapped Sidebar */}
                 <div className="flex flex-col xl:flex-row gap-8 items-start w-full max-w-7xl mx-auto">
-                  {/* Left Column: 3-Column Boxed Chronicles Grid */}
-                  <div className="flex-grow w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredNews.map((item) => {
+                  {/* Left Column: Reorganized News Feed */}
+                  <div className="flex-grow w-full space-y-8">
+                    {(() => {
+                      const NEWS_PER_PAGE = 20;
+                      const totalNewsPages = Math.ceil(filteredNews.length / NEWS_PER_PAGE) || 1;
+                      const paginatedNews = filteredNews.slice((newsCurrentPage - 1) * NEWS_PER_PAGE, newsCurrentPage * NEWS_PER_PAGE);
+
+                      // Top 6 entries with thumbnails (shown on Page 1)
+                      const thumbnailNewsItems = newsCurrentPage === 1 ? paginatedNews.slice(0, 6) : [];
+                      // Remaining entries on Page 1 or all entries on subsequent pages
+                      const archiveNewsItems = newsCurrentPage === 1 ? paginatedNews.slice(6) : paginatedNews;
+
+                      if (filteredNews.length === 0) {
+                        return (
+                          <div className="bg-white/50 border border-zelda-border-sand rounded-2xl p-12 text-center text-zelda-charcoal/70 space-y-3">
+                            <BookOpen className="w-10 h-10 mx-auto text-zelda-gold/60" />
+                            <h4 className="font-serif text-base font-bold uppercase">No Chronicles Found</h4>
+                            <p className="text-xs text-zelda-charcoal/60">No news entries match the selected category or search query.</p>
+                          </div>
+                        );
+                      }
+
                       return (
-                        <div 
-                          key={item.id} 
-                          id={`news-${item.id}`}
-                          className="bg-white/70 border border-zelda-border-sand rounded-xl overflow-hidden flex flex-col justify-between hover:border-zelda-gold/80 transition-all duration-300 shadow-md h-full group hover:-translate-y-1"
-                        >
-                          {/* Box Image Header */}
-                          <div 
-                            onClick={() => openNewsArticle(item.id)}
-                            className="relative h-48 w-full overflow-hidden flex-shrink-0 bg-black/10 cursor-pointer"
-                          >
-                            <img 
-                              src={item.imageUrl} 
-                              alt={item.title} 
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" 
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                            
-                            <span className={`absolute top-3 left-3 px-2.5 py-1 rounded text-[10px] font-serif font-bold uppercase tracking-wider shadow ${
-                              item.category === 'movie' 
-                                ? 'bg-zelda-gold text-white' 
-                                : item.category === 'game' 
-                                ? 'bg-zelda-green-forest text-white' 
-                                : 'bg-zelda-green-light text-white'
-                            }`}>
-                              {item.category === 'movie' ? 'Live Action Movie' : item.category}
-                            </span>
-
-                            {item.eeatScore && (
-                              <span className="absolute top-3 right-3 bg-emerald-950/80 backdrop-blur text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded text-[9px] font-mono font-bold flex items-center gap-1 shadow">
-                                <Shield className="w-3 h-3 text-emerald-400" />
-                                <span>E-E-A-T {item.eeatScore}/100</span>
-                              </span>
-                            )}
-
-                            <span className="absolute bottom-2.5 right-2.5 text-[10px] font-mono text-gray-200 bg-black/75 px-2 py-0.5 rounded shadow flex items-center gap-1">
-                              <Heart className="w-3 h-3 text-rose-400 fill-rose-500" />
-                              <span className="font-bold">{item.likes || 0}</span>
-                              <span>&bull;</span>
-                              <span>{item.date}</span>
-                            </span>
-
-                            {item.galleryImages && item.galleryImages.length > 0 && (
-                              <span className="absolute bottom-2.5 left-2.5 text-[10px] font-serif font-bold text-white bg-black/80 backdrop-blur px-2 py-0.5 rounded shadow flex items-center gap-1 border border-white/20">
-                                <ImageIcon className="w-3 h-3 text-zelda-gold" />
-                                <span>{item.galleryImages.length} {item.galleryImages.length === 1 ? 'Photo' : 'Photos'}</span>
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Box Content Body */}
-                          <div className="p-4 md:p-5 flex-grow flex flex-col justify-between space-y-4">
-                            <div className="space-y-2.5">
-                              <h4 
-                                onClick={() => openNewsArticle(item.id)}
-                                className="font-serif text-base md:text-lg font-bold text-zelda-charcoal tracking-wide group-hover:text-zelda-gold transition-colors line-clamp-2 cursor-pointer"
-                              >
-                                {item.title}
+                        <div className="space-y-8">
+                          {/* TOP 6 FEATURED ENTRIES WITH THUMBNAILS (3-COL GRID) */}
+                          {thumbnailNewsItems.length > 0 && (
+                            <div className="space-y-4">
+                              <h4 className="font-serif text-sm font-bold uppercase tracking-wider text-zelda-gold flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-zelda-gold" />
+                                <span>Latest Chronicles ({thumbnailNewsItems.length})</span>
                               </h4>
-                              <NewsContentRenderer
-                                content={item.summary}
-                                isSummary={true}
-                              />
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {thumbnailNewsItems.map((item) => (
+                                  <div 
+                                    key={item.id} 
+                                    id={`news-${item.id}`}
+                                    className="bg-white/70 border border-zelda-border-sand rounded-xl overflow-hidden flex flex-col justify-between hover:border-zelda-gold/80 transition-all duration-300 shadow-md h-full group hover:-translate-y-1"
+                                  >
+                                    {/* Box Image Header */}
+                                    <div 
+                                      onClick={() => openNewsArticle(item.id)}
+                                      className="relative h-48 w-full overflow-hidden flex-shrink-0 bg-black/10 cursor-pointer"
+                                    >
+                                      <img 
+                                        src={item.imageUrl} 
+                                        alt={item.title} 
+                                        referrerPolicy="no-referrer"
+                                        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" 
+                                      />
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                                      
+                                      <span className={`absolute top-3 left-3 px-2.5 py-1 rounded text-[10px] font-serif font-bold uppercase tracking-wider shadow ${
+                                        item.category === 'movie' 
+                                          ? 'bg-zelda-gold text-white' 
+                                          : item.category === 'game' 
+                                          ? 'bg-zelda-green-forest text-white' 
+                                          : 'bg-zelda-green-light text-white'
+                                      }`}>
+                                        {item.category === 'movie' ? 'Live Action Movie' : item.category}
+                                      </span>
+
+                                      {item.eeatScore && (
+                                        <span className="absolute top-3 right-3 bg-emerald-950/80 backdrop-blur text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded text-[9px] font-mono font-bold flex items-center gap-1 shadow">
+                                          <Shield className="w-3 h-3 text-emerald-400" />
+                                          <span>E-E-A-T {item.eeatScore}/100</span>
+                                        </span>
+                                      )}
+
+                                      <span className="absolute bottom-2.5 right-2.5 text-[10px] font-mono text-gray-200 bg-black/75 px-2 py-0.5 rounded shadow flex items-center gap-1">
+                                        <Heart className="w-3 h-3 text-rose-400 fill-rose-500" />
+                                        <span className="font-bold">{item.likes || 0}</span>
+                                        <span>&bull;</span>
+                                        <span>{item.date}</span>
+                                      </span>
+
+                                      {item.galleryImages && item.galleryImages.length > 0 && (
+                                        <span className="absolute bottom-2.5 left-2.5 text-[10px] font-serif font-bold text-white bg-black/80 backdrop-blur px-2 py-0.5 rounded shadow flex items-center gap-1 border border-white/20">
+                                          <ImageIcon className="w-3 h-3 text-zelda-gold" />
+                                          <span>{item.galleryImages.length} {item.galleryImages.length === 1 ? 'Photo' : 'Photos'}</span>
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {/* Box Content Body */}
+                                    <div className="p-4 md:p-5 flex-grow flex flex-col justify-between space-y-4">
+                                      <div className="space-y-2.5">
+                                        <h4 
+                                          onClick={() => openNewsArticle(item.id)}
+                                          className="font-serif text-base md:text-lg font-bold text-zelda-charcoal tracking-wide group-hover:text-zelda-gold transition-colors line-clamp-2 cursor-pointer"
+                                        >
+                                          {item.title}
+                                        </h4>
+                                        <NewsContentRenderer
+                                          content={item.summary}
+                                          isSummary={true}
+                                        />
+                                      </div>
+
+                                      <div className="flex gap-2 pt-3 border-t border-zelda-border-sand/40 mt-auto">
+                                        <button
+                                          onClick={() => handleLikeNews(item.id)}
+                                          className="px-3 py-2 bg-white hover:bg-rose-50 border border-zelda-border-sand hover:border-rose-400 rounded-lg text-zelda-charcoal hover:text-rose-600 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                                          title="Express Courage"
+                                        >
+                                          <Heart className="w-3.5 h-3.5 fill-current text-rose-600" />
+                                          <span className="text-xs font-serif font-bold">{item.likes || 0}</span>
+                                        </button>
+
+                                        <button
+                                          onClick={() => openNewsArticle(item.id)}
+                                          className="flex-grow text-center py-2 bg-zelda-gold hover:bg-yellow-600 text-white border border-zelda-gold rounded-lg font-serif text-xs uppercase tracking-widest transition-all cursor-pointer font-bold shadow-sm flex items-center justify-center gap-1.5"
+                                        >
+                                          <span>Read Full Chronicle</span>
+                                          <ChevronRight className="w-3.5 h-3.5" />
+                                        </button>
+
+                                        <button
+                                          onClick={() => handleShare('news', item.id, item.title)}
+                                          className="px-3 py-2 bg-white hover:bg-zelda-beige-card border border-zelda-border-sand hover:border-zelda-gold rounded-lg text-zelda-charcoal hover:text-zelda-gold transition-all flex items-center justify-center relative cursor-pointer"
+                                          title="Share this Chronicle"
+                                        >
+                                          <Share2 className="w-4 h-4" />
+                                          {shareNotification?.id === item.id && (
+                                            <span className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-black text-white text-[9px] rounded py-1 px-2 whitespace-nowrap z-10 font-sans shadow-md">
+                                              {shareNotification.message}
+                                            </span>
+                                          )}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
+                          )}
 
-                            <div className="flex gap-2 pt-3 border-t border-zelda-border-sand/40 mt-auto">
+                          {/* CONTINUED CHRONICLES (TITLE LINKS + SMALL EXCERPTS) */}
+                          {archiveNewsItems.length > 0 && (
+                            <div className="space-y-4 pt-2">
+                              <div className="border-b border-zelda-border-sand pb-3 flex items-center justify-between">
+                                <h4 className="font-serif text-sm font-bold uppercase tracking-wider text-zelda-charcoal flex items-center gap-2">
+                                  <BookOpen className="w-4 h-4 text-zelda-gold" />
+                                  <span>Archived Hyrule Chronicles ({archiveNewsItems.length})</span>
+                                </h4>
+                                <span className="text-[10px] font-mono text-zelda-charcoal/60">
+                                  Title Links & Excerpts
+                                </span>
+                              </div>
+
+                              <div className="space-y-3">
+                                {archiveNewsItems.map((item) => (
+                                  <div 
+                                    key={item.id} 
+                                    id={`news-${item.id}`}
+                                    className="bg-white/80 border border-zelda-border-sand hover:border-zelda-gold rounded-xl p-4 transition-all duration-200 shadow-xs hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4 group"
+                                  >
+                                    <div className="space-y-1.5 flex-1 min-w-0">
+                                      <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono">
+                                        <span className={`px-2 py-0.5 rounded font-serif font-bold uppercase tracking-wider text-white ${
+                                          item.category === 'movie' ? 'bg-zelda-gold' : item.category === 'game' ? 'bg-zelda-green-forest' : 'bg-zelda-green-light'
+                                        }`}>
+                                          {item.category === 'movie' ? 'Live Action Movie' : item.category}
+                                        </span>
+                                        <span className="text-zelda-charcoal/60">{item.date}</span>
+                                        {item.authorByline && (
+                                          <span className="text-zelda-gold font-bold hidden sm:inline">&bull; By {item.authorByline}</span>
+                                        )}
+                                      </div>
+
+                                      <h4 
+                                        onClick={() => openNewsArticle(item.id)}
+                                        className="font-serif text-base font-bold text-zelda-charcoal group-hover:text-zelda-gold transition-colors cursor-pointer line-clamp-1"
+                                      >
+                                        {item.title}
+                                      </h4>
+
+                                      <p className="text-xs text-zelda-charcoal/80 line-clamp-2 font-sans leading-relaxed">
+                                        {item.summary.replace(/<[^>]*>/g, '')}
+                                      </p>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 flex-shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-zelda-border-sand/40">
+                                      <button
+                                        onClick={() => handleLikeNews(item.id)}
+                                        className="px-3 py-1.5 bg-amber-50/60 hover:bg-rose-50 border border-zelda-border-sand hover:border-rose-400 rounded-lg text-zelda-charcoal hover:text-rose-600 text-xs font-serif font-bold transition-all flex items-center gap-1 cursor-pointer"
+                                        title="Express Courage"
+                                      >
+                                        <Heart className="w-3 h-3 text-rose-600 fill-current" />
+                                        <span>{item.likes || 0}</span>
+                                      </button>
+
+                                      <button
+                                        onClick={() => openNewsArticle(item.id)}
+                                        className="px-3.5 py-1.5 bg-zelda-gold hover:bg-yellow-600 text-white font-serif text-xs uppercase font-bold tracking-wider rounded-lg shadow-xs transition-all flex items-center gap-1 cursor-pointer"
+                                      >
+                                        <span>Read</span>
+                                        <ChevronRight className="w-3 h-3" />
+                                      </button>
+
+                                      <button
+                                        onClick={() => handleShare('news', item.id, item.title)}
+                                        className="p-1.5 bg-white border border-zelda-border-sand hover:border-zelda-gold rounded-lg text-zelda-charcoal hover:text-zelda-gold transition-all relative cursor-pointer"
+                                        title="Share"
+                                      >
+                                        <Share2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* PAGINATION CONTROLS (20 ENTRIES PER PAGE) */}
+                          {totalNewsPages > 1 && (
+                            <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-zelda-border-sand bg-white/80 p-4 rounded-xl shadow-xs">
                               <button
-                                onClick={() => handleLikeNews(item.id)}
-                                className="px-3 py-2 bg-white hover:bg-rose-50 border border-zelda-border-sand hover:border-rose-400 rounded-lg text-zelda-charcoal hover:text-rose-600 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
-                                title="Express Courage & Honor for this Chronicle"
+                                disabled={newsCurrentPage === 1}
+                                onClick={() => { setNewsCurrentPage(p => Math.max(p - 1, 1)); window.scrollTo({ top: 350, behavior: 'smooth' }); }}
+                                className="px-4 py-2 bg-white border border-zelda-border-sand rounded-lg text-xs font-serif font-bold uppercase tracking-wider text-zelda-charcoal disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zelda-gold hover:text-white transition-all cursor-pointer shadow-xs"
                               >
-                                <Heart className="w-3.5 h-3.5 fill-current text-rose-600" />
-                                <span className="text-xs font-serif font-bold">{item.likes || 0}</span>
+                                &larr; Previous Page
                               </button>
 
-                              <button
-                                onClick={() => openNewsArticle(item.id)}
-                                className="flex-grow text-center py-2 bg-zelda-gold hover:bg-yellow-600 text-white border border-zelda-gold rounded-lg font-serif text-xs uppercase tracking-widest transition-all cursor-pointer font-bold shadow-sm flex items-center justify-center gap-1.5"
-                              >
-                                <span>Read Full Chronicle</span>
-                                <ChevronRight className="w-3.5 h-3.5" />
-                              </button>
+                              <div className="flex items-center gap-1.5 text-xs font-serif">
+                                <span className="text-zelda-charcoal/70 mr-1">Page</span>
+                                {Array.from({ length: totalNewsPages }, (_, i) => i + 1).map((pageNum) => (
+                                  <button
+                                    key={pageNum}
+                                    onClick={() => { setNewsCurrentPage(pageNum); window.scrollTo({ top: 350, behavior: 'smooth' }); }}
+                                    className={`w-8 h-8 rounded-lg font-bold transition-all cursor-pointer ${
+                                      newsCurrentPage === pageNum
+                                        ? 'bg-zelda-gold text-white shadow-md'
+                                        : 'bg-white text-zelda-charcoal border border-zelda-border-sand hover:bg-amber-50'
+                                    }`}
+                                  >
+                                    {pageNum}
+                                  </button>
+                                ))}
+                                <span className="text-zelda-charcoal/70 ml-1">of {totalNewsPages}</span>
+                              </div>
 
                               <button
-                                onClick={() => handleShare('news', item.id, item.title)}
-                                className="px-3 py-2 bg-white hover:bg-zelda-beige-card border border-zelda-border-sand hover:border-zelda-gold rounded-lg text-zelda-charcoal hover:text-zelda-gold transition-all flex items-center justify-center relative cursor-pointer"
-                                title="Share this Chronicle"
+                                disabled={newsCurrentPage === totalNewsPages}
+                                onClick={() => { setNewsCurrentPage(p => Math.min(p + 1, totalNewsPages)); window.scrollTo({ top: 350, behavior: 'smooth' }); }}
+                                className="px-4 py-2 bg-white border border-zelda-border-sand rounded-lg text-xs font-serif font-bold uppercase tracking-wider text-zelda-charcoal disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zelda-gold hover:text-white transition-all cursor-pointer shadow-xs"
                               >
-                                <Share2 className="w-4 h-4" />
-                                {shareNotification?.id === item.id && (
-                                  <span className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-black text-white text-[9px] rounded py-1 px-2 whitespace-nowrap z-10 font-sans shadow-md">
-                                    {shareNotification.message}
-                                  </span>
-                                )}
+                                Next Page &rarr;
                               </button>
                             </div>
-                          </div>
+                          )}
                         </div>
                       );
-                    })}
+                    })()}
                   </div>
 
                   {/* Right Column: Sidebar Aligned to Right */}
                   <div id="extra-stuff-sidebar" className="w-full xl:w-80 flex-shrink-0 bg-white/50 border border-zelda-border-sand rounded-xl p-5 min-h-[400px] flex flex-col justify-between space-y-6 shadow-md">
+                    {/* Interactive Ocarina Music Player Sidebar Widget */}
+                    <OcarinaSidebarWidget />
+
                     <div className="space-y-4 w-full">
                       <div className="border-b border-zelda-border-sand/40 pb-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -2877,7 +3135,7 @@ export default function App() {
                           <div 
                             key={sub.id}
                             onClick={() => {
-                              setActiveTab('submissions');
+                              openSubmissionPage(sub.id);
                               setTimeout(() => {
                                 const el = document.getElementById(`submission-${sub.id}`);
                                 if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2959,145 +3217,25 @@ export default function App() {
           </motion.div>
         )}
 
-        {/* TAB 2: LORE LABYRINTH */}
+        {/* TAB 2: ARCHIVES */}
         {activeTab === 'lore' && (
           <motion.div 
             initial={{ opacity: 0, y: 15 }} 
             animate={{ opacity: 1, y: 0 }} 
             className="space-y-6"
           >
-            {/* Search and Categories bar */}
-            <div className="bg-zelda-beige-card border border-zelda-border-sand rounded-2xl p-4 md:p-6 flex flex-col md:flex-row gap-4 items-center justify-between">
-              
-              {/* Search Bar */}
-              <div className="relative w-full md:w-96">
-                <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-zelda-gold" />
-                <input
-                  type="text"
-                  placeholder="Query the Royal Archives... (character, item, game)"
-                  value={loreSearch}
-                  onChange={(e) => setLoreSearch(e.target.value)}
-                  className="w-full bg-white border border-zelda-border-sand rounded-lg pl-10 pr-4 py-3 text-sm text-zelda-charcoal focus:outline-none focus:border-zelda-gold tracking-wide placeholder-zelda-charcoal/40 shadow-inner"
-                />
-                {loreSearch && (
-                  <button 
-                    onClick={() => setLoreSearch('')} 
-                    className="absolute right-3 top-3.5 text-zelda-charcoal/50 hover:text-zelda-charcoal"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-
-              {/* Filters */}
-              <div className="flex flex-wrap justify-center gap-2">
-                {['all', 'character', 'item', 'location'].map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setLoreCategory(cat)}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-serif uppercase tracking-widest border transition-all ${
-                      loreCategory === cat 
-                        ? 'bg-zelda-gold border-zelda-gold text-white font-bold shadow-md' 
-                        : 'bg-white/40 border-zelda-border-sand text-zelda-charcoal/80 hover:border-zelda-gold/40'
-                    }`}
-                  >
-                    {cat}s
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Lore entries display */}
-            {filteredLore.length === 0 ? (
-              <div className="text-center py-16 bg-white/30 border border-zelda-border-sand rounded-2xl">
-                <AlertCircle className="w-12 h-12 text-zelda-gold/60 mx-auto mb-3" />
-                <h4 className="font-serif text-lg text-zelda-charcoal/80">No Records Found</h4>
-                <p className="text-zelda-charcoal/60 text-sm mt-1">Try broadening your search query across the Sacred Timeline.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {filteredLore.map((entry) => (
-                  <div 
-                    key={entry.id}
-                    id={`lore-${entry.id}`}
-                    className="bg-white/50 border border-zelda-border-sand hover:border-zelda-gold rounded-xl overflow-hidden flex flex-col justify-between transition-all duration-300 shadow-lg"
-                  >
-                    <div>
-                      <div className="relative h-44 overflow-hidden">
-                        <img 
-                          src={entry.imageUrl} 
-                          alt={entry.title} 
-                          referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity" 
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
-                        <span className="absolute top-3 left-3 bg-zelda-green-forest border border-zelda-gold/30 text-white text-[9px] font-serif uppercase tracking-widest px-2.5 py-1 rounded">
-                          {entry.category}
-                        </span>
-                      </div>
-
-                      <div className="p-5 space-y-3">
-                        <h4 className="font-serif text-xl font-bold text-zelda-charcoal tracking-wide">
-                          {entry.title}
-                        </h4>
-                        <div className="text-zelda-gold text-xs font-serif italic">
-                          Chronicles: {entry.game}
-                        </div>
-                        <p className="text-zelda-charcoal/80 text-sm leading-relaxed text-justify">
-                          {entry.description}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="p-5 pt-0 mt-4">
-                      <div className="flex items-center justify-between border-t border-zelda-border-sand/40 pt-4 text-[10px] text-zelda-charcoal/50 font-mono">
-                        <span>Database Reference</span>
-                        <span className="text-zelda-gold font-bold">Verified Archives</span>
-                      </div>
-
-                      <div className="flex gap-2 mt-4 pt-1">
-                        <button
-                          onClick={() => setExpandedComments(prev => ({ ...prev, [entry.id]: !prev[entry.id] }))}
-                          className="flex-grow flex items-center justify-center gap-1.5 py-1.5 bg-white hover:bg-zelda-beige-card border border-zelda-border-sand hover:border-zelda-gold rounded-lg font-serif text-xs text-zelda-charcoal hover:text-zelda-gold uppercase tracking-wider transition-all cursor-pointer"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5" />
-                          <span>{expandedComments[entry.id] ? 'Close Discussions' : 'Alliance Discussions'}</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleShare('lore', entry.id, entry.title)}
-                          className="px-3 py-1.5 bg-white hover:bg-zelda-beige-card border border-zelda-border-sand hover:border-zelda-gold rounded-lg text-zelda-charcoal hover:text-zelda-gold transition-all flex items-center justify-center relative cursor-pointer"
-                          title="Share this Lore entry"
-                        >
-                          <Share2 className="w-4 h-4" />
-                          {shareNotification?.id === entry.id && (
-                            <span className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-black text-white text-[9px] rounded py-1 px-2 whitespace-nowrap z-10 font-sans shadow-md">
-                              {shareNotification.message}
-                            </span>
-                          )}
-                        </button>
-                      </div>
-
-                      {expandedComments[entry.id] && (
-                        <CommentsSection
-                          targetId={entry.id}
-                          targetType="lore"
-                          user={user}
-                          comments={comments}
-                          commentsLoading={commentsLoading}
-                          newCommentText={newCommentText}
-                          setNewCommentText={setNewCommentText}
-                          fetchComments={fetchComments}
-                          handleAddComment={handleAddComment}
-                          handleDeleteComment={handleDeleteComment}
-                          handleLogin={handleLogin}
-                        />
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <ArchivesSection 
+              entries={lore} 
+              currentUser={user} 
+              onOpenAuth={() => handleLogin()} 
+              comments={comments}
+              commentsLoading={commentsLoading}
+              newCommentText={newCommentText}
+              setNewCommentText={setNewCommentText}
+              fetchComments={fetchComments}
+              handleAddComment={handleAddComment}
+              handleDeleteComment={handleDeleteComment}
+            />
           </motion.div>
         )}
 
@@ -3176,26 +3314,17 @@ export default function App() {
 
                     {/* Main Creation Display Stage */}
                     <div className="bg-zelda-beige-card border border-zelda-border-sand rounded-2xl overflow-hidden shadow-xl text-zelda-charcoal">
-                      {/* Media / Content Header Container */}
-                      {currentSub.contentUrl && currentSub.type !== 'video' ? (
-                        <div className="bg-black/95 p-4 md:p-8 flex flex-col items-center justify-center relative min-h-[400px]">
-                          <img
-                            src={currentSub.contentUrl}
-                            alt={currentSub.title}
-                            referrerPolicy="no-referrer"
-                            className="max-h-[600px] w-auto object-contain rounded-xl shadow-2xl border border-white/10"
+                      {/* Gallery or Media Showcase Container */}
+                      {((currentSub.galleryImages && currentSub.galleryImages.length > 0) || (currentSub.contentUrl && currentSub.type !== 'video')) ? (
+                        <div className="bg-black/95 p-4 md:p-6">
+                          <NewsGalleryViewer 
+                            images={
+                              currentSub.galleryImages && currentSub.galleryImages.length > 0 
+                                ? currentSub.galleryImages 
+                                : [currentSub.contentUrl!]
+                            } 
+                            title={currentSub.title} 
                           />
-                          <div className="mt-4 flex items-center gap-3">
-                            <a
-                              href={currentSub.contentUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-xs font-mono text-amber-300 hover:underline flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              <span>View Full Resolution Masterpiece</span>
-                            </a>
-                          </div>
                         </div>
                       ) : currentSub.type === 'video' ? (
                         <div className="bg-gradient-to-br from-zelda-green-forest via-[#0a1811] to-black p-8 md:p-12 text-white text-center flex flex-col items-center justify-center min-h-[350px] relative border-b border-zelda-gold/30">
@@ -3539,15 +3668,15 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Image Upload & Media Link Area (Full Width) */}
-                    <div className="bg-white/80 border border-zelda-border-sand rounded-2xl p-5 space-y-3 shadow-sm">
+                    {/* Image Upload & Multi-Image Gallery Area */}
+                    <div className="bg-white/80 border border-zelda-border-sand rounded-2xl p-5 space-y-4 shadow-sm">
                       <div className="flex items-center justify-between">
                         <label className="block text-xs font-serif font-bold uppercase tracking-wider text-zelda-charcoal flex items-center gap-2">
                           <ImageIcon className="w-4 h-4 text-zelda-gold" />
-                          <span>Creation Image Upload & Media Link</span>
+                          <span>Creation Images & Gallery Upload</span>
                         </label>
                         <span className="text-[10px] font-mono text-zelda-charcoal/60 bg-zelda-gold/10 px-2 py-0.5 rounded border border-zelda-gold/20">
-                          Upload File or Paste URL
+                          Multi-Image Gallery Enabled
                         </span>
                       </div>
 
@@ -3568,53 +3697,77 @@ export default function App() {
                             ref={creationFileInputRef} 
                             type="file" 
                             accept="image/*" 
+                            multiple
                             className="hidden" 
                             onChange={handleCreationFileUpload} 
                           />
                           <Upload className="w-6 h-6 text-zelda-gold mb-1 animate-bounce" />
                           <p className="text-xs font-serif font-bold text-zelda-charcoal">
-                            Click or Drag Image Here
+                            Click or Drag Images Here
                           </p>
                           <p className="text-[10px] text-zelda-charcoal/60 mt-0.5">
-                            PNG, JPG, WEBP, GIF (Up to 8MB)
+                            PNG, JPG, WEBP, GIF (Max 20MB per image, multiple files allowed)
                           </p>
                         </div>
 
-                        {/* Direct URL input & Thumbnail preview */}
-                        <div className="lg:col-span-2 space-y-2">
-                          <input
-                            type="text"
-                            placeholder="Or enter image/media URL (e.g. https://images.unsplash.com/... or youtube)"
-                            value={contentUrl}
-                            onChange={(e) => setContentUrl(e.target.value)}
-                            className="w-full bg-white border border-zelda-border-sand rounded-xl p-3 text-xs text-zelda-charcoal focus:outline-none focus:border-zelda-gold font-mono shadow-sm"
-                          />
+                        {/* Direct URL Input & Add to Gallery */}
+                        <div className="lg:col-span-2 space-y-3">
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Paste image URL (e.g. https://images.unsplash.com/...)"
+                              value={customCreationGalleryUrl}
+                              onChange={(e) => setCustomCreationGalleryUrl(e.target.value)}
+                              className="flex-1 bg-white border border-zelda-border-sand rounded-xl p-2.5 text-xs text-zelda-charcoal focus:outline-none focus:border-zelda-gold font-mono shadow-sm"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (customCreationGalleryUrl.trim()) {
+                                  const url = customCreationGalleryUrl.trim();
+                                  setCreationGalleryImages(prev => prev.includes(url) ? prev : [...prev, url]);
+                                  if (!contentUrl) setContentUrl(url);
+                                  setCustomCreationGalleryUrl('');
+                                }
+                              }}
+                              className="px-4 py-2 bg-zelda-gold hover:bg-yellow-600 text-white font-serif text-xs font-bold uppercase rounded-xl transition-all cursor-pointer shadow"
+                            >
+                              Add Image
+                            </button>
+                          </div>
 
-                          {contentUrl ? (
-                            <div className="flex items-center gap-3 bg-amber-50/80 p-2.5 rounded-xl border border-zelda-gold/30">
-                              <img 
-                                src={contentUrl} 
-                                alt="Preview" 
-                                referrerPolicy="no-referrer"
-                                className="w-14 h-14 object-cover rounded-lg border border-zelda-gold/40 shadow-xs flex-shrink-0" 
-                                onError={(e) => (e.currentTarget.style.display = 'none')}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-serif font-bold text-zelda-charcoal truncate">Image Asset Selected</p>
-                                <p className="text-[10px] text-zelda-charcoal/60 truncate font-mono">{contentUrl}</p>
+                          {/* Gallery Images List / Thumbnails */}
+                          {creationGalleryImages.length > 0 && (
+                            <div className="space-y-2 pt-1 border-t border-zelda-border-sand/40">
+                              <span className="text-[10px] font-serif font-bold text-zelda-gold uppercase tracking-wider block">
+                                Selected Gallery Images ({creationGalleryImages.length}):
+                              </span>
+                              <div className="flex flex-wrap gap-2">
+                                {creationGalleryImages.map((imgUrl, idx) => (
+                                  <div key={idx} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-zelda-gold/50 bg-black/10 shadow-xs">
+                                    <img 
+                                      src={imgUrl} 
+                                      alt={`Gallery asset ${idx + 1}`} 
+                                      referrerPolicy="no-referrer"
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setCreationGalleryImages(prev => prev.filter((_, i) => i !== idx));
+                                        if (contentUrl === imgUrl) {
+                                          setContentUrl(creationGalleryImages.find((_, i) => i !== idx) || '');
+                                        }
+                                      }}
+                                      className="absolute top-0.5 right-0.5 bg-black/80 text-white rounded-full p-0.5 hover:bg-red-600 opacity-90 group-hover:opacity-100 transition-opacity"
+                                      title="Remove from gallery"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ))}
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => setContentUrl('')}
-                                className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-[10px] font-serif font-bold rounded-lg border border-red-300 cursor-pointer"
-                              >
-                                Remove
-                              </button>
                             </div>
-                          ) : (
-                            <p className="text-[11px] text-zelda-charcoal/70 italic font-sans">
-                              Uploading an image attaches a high-resolution preview to your creation post & page.
-                            </p>
                           )}
                         </div>
                       </div>
@@ -3996,6 +4149,13 @@ export default function App() {
                                   <Award className="w-3 h-3 text-zelda-gold" />
                                   <span>Tokenized IP</span>
                                 </button>
+                              )}
+
+                              {sub.galleryImages && sub.galleryImages.length > 1 && (
+                                <span className="absolute bottom-2.5 left-2.5 text-[10px] font-serif font-bold text-white bg-zelda-gold/90 border border-amber-300/60 px-2 py-0.5 rounded shadow flex items-center gap-1 z-10">
+                                  <ImageIcon className="w-3 h-3" />
+                                  <span>{sub.galleryImages.length} Photos</span>
+                                </span>
                               )}
 
                               <span className="absolute bottom-2.5 right-2.5 text-[10px] font-mono text-gray-200 bg-black/75 px-2 py-0.5 rounded shadow">
@@ -4397,6 +4557,21 @@ export default function App() {
           </motion.div>
         )}
 
+        {/* TAB: FAN PORTAL */}
+        {activeTab === 'portal' && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <FanPortalSection 
+              submissions={submissions}
+              onNavigateToTab={setActiveTab}
+              onOpenSubmission={openSubmissionPage}
+            />
+          </motion.div>
+        )}
+
         {/* TAB 5: ADMIN SANCTUM */}
         {activeTab === 'admin' && isUserAdmin && (
           <motion.div 
@@ -4428,6 +4603,84 @@ export default function App() {
                   <span className="text-xs font-serif font-semibold text-zelda-gold">Royal Court Scribe</span>
                 </div>
               </div>
+            </div>
+
+            {/* AWS Integration Status Banner */}
+            <div className="bg-gradient-to-r from-amber-950/10 via-amber-900/5 to-slate-900/10 border border-amber-500/30 rounded-xl p-4 text-xs space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-amber-500/10 text-amber-600 rounded-lg border border-amber-500/20 font-bold text-base">
+                    ☁️ AWS
+                  </div>
+                  <div>
+                    <h4 className="font-serif font-bold text-amber-900 uppercase tracking-wider flex items-center gap-2">
+                      Amazon Web Services (AWS) Integration
+                      <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-sans font-semibold border border-emerald-300 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active
+                      </span>
+                    </h4>
+                    <p className="text-gray-600 text-[11px] mt-0.5">
+                      Storage: <span className="font-semibold text-amber-900">AWS DynamoDB</span> ({awsStatusInfo?.newsTable || 'ZeldaNews'}, {awsStatusInfo?.submissionsTable || 'ZeldaSubmissions'}) &bull; <span className="font-semibold text-amber-900">AWS S3</span> ({awsStatusInfo?.s3Bucket || 'Active'}) &bull; 
+                      <span className="text-red-700 font-semibold ml-1">Firestore: Disabled</span> &bull; 
+                      <span className="text-red-700 font-semibold ml-1">Cloud SQL: Disabled</span>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] font-mono">
+                  <div className="bg-white/90 border border-amber-200 px-3 py-1.5 rounded-md text-gray-600">
+                    Region: <span className="font-bold text-amber-900">{awsStatusInfo?.region || 'us-west-2'}</span>
+                    {awsStatusInfo?.rawRegion && awsStatusInfo.rawRegion !== awsStatusInfo.region && (
+                      <span className="text-[10px] text-gray-400 ml-1">({awsStatusInfo.rawRegion})</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* AWS IAM Permission Diagnostic Alert if AccessDenied occurs */}
+              {awsStatusInfo?.lastError && (
+                <div className="bg-amber-50/90 border border-amber-300 rounded-lg p-3 text-[11px] text-amber-900 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-600 text-sm font-bold">⚠️</span>
+                    <div>
+                      <span className="font-bold text-amber-950">AWS IAM Permission Advisory:</span> {awsStatusInfo.lastError.message}
+                      <p className="text-[10px] text-amber-800/80 mt-0.5">
+                        The AWS connection is active, but your IAM User or Role lacks permission for DynamoDB operations on target tables.
+                      </p>
+                    </div>
+                  </div>
+                  <details className="text-[10px] bg-amber-100/60 rounded border border-amber-200 p-2">
+                    <summary className="font-mono font-semibold cursor-pointer text-amber-900 hover:underline">
+                      📋 View Recommended AWS IAM Policy JSON
+                    </summary>
+                    <pre className="mt-2 bg-slate-900 text-amber-300 p-2.5 rounded font-mono text-[10px] overflow-x-auto leading-relaxed">
+{`{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:Scan",
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:UpdateItem"
+      ],
+      "Resource": "arn:aws:dynamodb:*:*:table/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::*/*"
+    }
+  ]
+}`}
+                    </pre>
+                  </details>
+                </div>
+              )}
             </div>
 
             {/* Admin Sub-tabs Navigation */}

@@ -12,6 +12,18 @@
         "date": { "type": "string" },
         "category": { "type": "string" },
         "imageUrl": { "type": "string" },
+        "galleryImages": { "type": "array" },
+        "seoTitle": { "type": "string" },
+        "metaDescription": { "type": "string" },
+        "focusKeywords": { "type": "array" },
+        "canonicalUrl": { "type": "string" },
+        "jsonLdSchema": { "type": "string" },
+        "authorByline": { "type": "string" },
+        "eeatScore": { "type": "number" },
+        "eeatDetails": { "type": "object" },
+        "rssReferenceUrl": { "type": "string" },
+        "rssSourceTitle": { "type": "string" },
+        "rssPublishDate": { "type": "string" },
         "likes": { "type": "integer" }
       },
       "required": ["id", "title", "summary", "content", "date", "category", "imageUrl"]

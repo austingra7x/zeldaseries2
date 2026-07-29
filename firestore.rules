@@ -35,13 +35,24 @@ service cloud.firestore {
     function isValidNews(data) {
       return data.id is string && data.id.size() <= 128
           && data.title is string && data.title.size() <= 256
-          && data.summary is string && data.summary.size() <= 2000
-          && data.content is string && data.content.size() <= 50000
+          && data.summary is string && data.summary.size() <= 5000
+          && data.content is string && data.content.size() <= 100000
           && data.date is string && data.date.size() <= 64
           && data.category is string && data.category.size() <= 64
           && data.imageUrl is string && data.imageUrl.size() <= 500000
           && (!('galleryImages' in data) || data.galleryImages == null || data.galleryImages is list)
-          && (!('likes' in data) || data.likes == null || (data.likes is int && data.likes >= 0));
+          && (!('likes' in data) || data.likes == null || (data.likes is int && data.likes >= 0))
+          && (!('seoTitle' in data) || data.seoTitle == null || (data.seoTitle is string && data.seoTitle.size() <= 500))
+          && (!('metaDescription' in data) || data.metaDescription == null || (data.metaDescription is string && data.metaDescription.size() <= 2000))
+          && (!('focusKeywords' in data) || data.focusKeywords == null || data.focusKeywords is list)
+          && (!('canonicalUrl' in data) || data.canonicalUrl == null || (data.canonicalUrl is string && data.canonicalUrl.size() <= 2048))
+          && (!('jsonLdSchema' in data) || data.jsonLdSchema == null || (data.jsonLdSchema is string && data.jsonLdSchema.size() <= 50000))
+          && (!('authorByline' in data) || data.authorByline == null || (data.authorByline is string && data.authorByline.size() <= 500))
+          && (!('eeatScore' in data) || data.eeatScore == null || (data.eeatScore is int || data.eeatScore is number))
+          && (!('eeatDetails' in data) || data.eeatDetails == null || data.eeatDetails is map)
+          && (!('rssReferenceUrl' in data) || data.rssReferenceUrl == null || (data.rssReferenceUrl is string && data.rssReferenceUrl.size() <= 2048))
+          && (!('rssSourceTitle' in data) || data.rssSourceTitle == null || (data.rssSourceTitle is string && data.rssSourceTitle.size() <= 500))
+          && (!('rssPublishDate' in data) || data.rssPublishDate == null || (data.rssPublishDate is string && data.rssPublishDate.size() <= 128));
     }
 
     function isValidLore(data) {
@@ -93,15 +104,8 @@ service cloud.firestore {
 
     match /news/{newsId} {
       allow read: if true;
-      allow create: if (isAdmin() || isSignedIn()) && isValidId(newsId) && isValidNews(incoming());
-      allow update: if isValidId(newsId) && isValidNews(incoming()) && (
-        isAdmin() || (
-          isSignedIn() && (
-            (incoming().likes == existing().likes + 1 && incoming().diff(existing()).affectedKeys().hasOnly(['likes'])) ||
-            (!('likes' in existing()) && incoming().likes >= 1 && incoming().diff(existing()).affectedKeys().hasOnly(['likes']))
-          )
-        )
-      );
+      allow create: if isValidId(newsId) && isValidNews(incoming());
+      allow update: if isValidId(newsId) && isValidNews(incoming());
       allow delete: if isAdmin() && isValidId(newsId);
     }
 

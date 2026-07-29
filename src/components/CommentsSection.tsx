@@ -3,39 +3,48 @@ import { MessageSquare, Send, Trash2, User } from 'lucide-react';
 import { Comment } from '../types';
 import { User as FirebaseUser } from 'firebase/auth';
 
-interface CommentsSectionProps {
+export interface CommentsSectionProps {
   targetId: string;
   targetType: 'news' | 'lore' | 'submission';
-  user: FirebaseUser | null;
-  comments: Record<string, Comment[]>;
-  commentsLoading: Record<string, boolean>;
-  newCommentText: Record<string, string>;
-  setNewCommentText: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  fetchComments: (targetId: string) => Promise<void>;
-  handleAddComment: (targetId: string, targetType: 'news' | 'lore' | 'submission', e: React.FormEvent) => Promise<void>;
-  handleDeleteComment: (targetId: string, commentId: string) => Promise<void>;
-  handleLogin: () => Promise<void>;
+  user?: FirebaseUser | null;
+  currentUser?: FirebaseUser | null;
+  comments?: Record<string, Comment[]>;
+  commentsLoading?: Record<string, boolean>;
+  newCommentText?: Record<string, string>;
+  setNewCommentText?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  fetchComments?: (targetId: string) => Promise<void>;
+  handleAddComment?: (targetId: string, targetType: 'news' | 'lore' | 'submission', e: React.FormEvent) => Promise<void>;
+  handleDeleteComment?: (targetId: string, commentId: string) => Promise<void>;
+  handleLogin?: () => Promise<void>;
+  onOpenAuth?: () => void;
 }
 
 export function CommentsSection({
   targetId,
   targetType,
   user,
-  comments,
-  commentsLoading,
-  newCommentText,
+  currentUser,
+  comments = {},
+  commentsLoading = {},
+  newCommentText = {},
   setNewCommentText,
   fetchComments,
   handleAddComment,
   handleDeleteComment,
-  handleLogin
+  handleLogin,
+  onOpenAuth
 }: CommentsSectionProps) {
+  const activeUser = user !== undefined ? user : (currentUser ?? null);
+  const activeLogin = handleLogin || onOpenAuth || (() => {});
+
   useEffect(() => {
-    fetchComments(targetId);
+    if (fetchComments && targetId) {
+      fetchComments(targetId);
+    }
   }, [targetId]);
 
   const targetComments = comments[targetId] || [];
-  const isLoading = commentsLoading[targetId];
+  const isLoading = commentsLoading[targetId] || false;
   const commentInput = newCommentText[targetId] || '';
 
   return (
@@ -46,13 +55,13 @@ export function CommentsSection({
       </div>
 
       {/* Input Form */}
-      {user ? (
-        <form onSubmit={(e) => handleAddComment(targetId, targetType, e)} className="flex gap-2">
+      {activeUser ? (
+        <form onSubmit={(e) => handleAddComment && handleAddComment(targetId, targetType, e)} className="flex gap-2">
           <input
             type="text"
             placeholder="Write a message in the scroll..."
             value={commentInput}
-            onChange={(e) => setNewCommentText(prev => ({ ...prev, [targetId]: e.target.value }))}
+            onChange={(e) => setNewCommentText && setNewCommentText(prev => ({ ...prev, [targetId]: e.target.value }))}
             className="flex-grow bg-white border border-zelda-border-sand rounded-lg px-3 py-2 text-xs text-zelda-charcoal focus:outline-none focus:border-zelda-gold"
           />
           <button
@@ -71,7 +80,7 @@ export function CommentsSection({
           </p>
           <button
             type="button"
-            onClick={handleLogin}
+            onClick={() => activeLogin()}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zelda-gold hover:bg-yellow-600 text-white text-[10px] font-serif font-bold uppercase tracking-wider rounded-md transition-all cursor-pointer shadow-sm"
           >
             <User className="w-3 h-3" /> Login with Google ▲
@@ -114,9 +123,9 @@ export function CommentsSection({
                     <span className="text-[9px] text-zelda-charcoal/40 font-mono">
                       {comment.date}
                     </span>
-                    {user?.uid === comment.authorId && (
+                    {activeUser?.uid === comment.authorId && (
                       <button
-                        onClick={() => handleDeleteComment(targetId, comment.id)}
+                        onClick={() => handleDeleteComment && handleDeleteComment(targetId, comment.id)}
                         className="text-red-500 hover:text-red-700 p-0.5 rounded transition-colors"
                         title="Delete Comment"
                       >

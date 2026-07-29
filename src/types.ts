@@ -68,13 +68,19 @@ export interface GeneratedSeoNews {
   rssPublishDate: string;
 }
 
+export type ArchiveCategoryType = 'merchandise' | 'movie' | 'games' | 'publications' | 'gamelore' | 'media';
+
 export interface LoreEntry {
   id: string;
   title: string;
-  game: string;
-  category: 'character' | 'item' | 'location' | 'era';
+  game?: string;
+  category: ArchiveCategoryType | 'character' | 'item' | 'location' | 'era' | string;
+  subCategory?: string;
   description: string;
   imageUrl: string;
+  galleryImages?: string[];
+  releaseYear?: string;
+  externalLink?: string;
 }
 
 export type SubmissionType = 'art' | 'video' | 'literature' | 'review' | 'memorabilia' | 'fangame' | 'theory' | 'nft' | 'avatar';
@@ -95,6 +101,7 @@ export interface UserSubmission {
   title: string;
   type: SubmissionType;
   contentUrl?: string;
+  galleryImages?: string[];
   contentBody?: string; // For literature/reviews
   description: string;
   date: string;

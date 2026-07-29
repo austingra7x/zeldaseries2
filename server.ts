@@ -10,6 +10,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
 import Parser from 'rss-parser';
 import { NewsItem, LoreEntry, UserSubmission, TokenDetails, SidebarBlock, RssFeedItem, GeneratedSeoNews } from './src/types';
+import { getAwsConfig, scanDynamoTable, putDynamoItem, deleteDynamoItem, uploadToS3, getLastAwsError } from './src/lib/aws';
 
 // Load environment variables
 dotenv.config();
@@ -239,7 +240,7 @@ function generateFallbackSageGuide(game: string, prompt: string) {
 }
 
 // In-Memory Database
-const newsDatabase: NewsItem[] = [
+let newsDatabase: NewsItem[] = [
   {
     id: 'n1',
     title: 'Legend of Zelda Live-Action Movie: Wes Ball Targets "Live-Action Miyazaki" Vibe',
@@ -340,7 +341,7 @@ const loreDatabase: LoreEntry[] = [
   },
 ];
 
-const submissionsDatabase: UserSubmission[] = [
+let submissionsDatabase: UserSubmission[] = [
   {
     id: 's1',
     author: 'KojiFan99',
@@ -760,15 +761,60 @@ Output strictly JSON matching the required schema.`;
   }
 });
 
-// Get all News
-app.get('/api/news', (req, res) => {
+// AWS Status Endpoint
+app.get('/api/aws/status', async (req, res) => {
+  const config = getAwsConfig();
+  const lastError = getLastAwsError();
+  res.json({
+    status: config.isConfigured ? 'connected' : 'ready_for_credentials',
+    provider: 'Amazon Web Services (AWS)',
+    region: config.region,
+    rawRegion: config.rawRegion,
+    newsTable: config.newsTable,
+    submissionsTable: config.submissionsTable,
+    s3Bucket: config.s3Bucket || 'not_configured',
+    firestoreStatus: 'disabled',
+    cloudSqlStatus: 'disabled',
+    lastError: lastError || null,
+    message: config.isConfigured 
+      ? 'AWS DynamoDB & S3 integration actively handles global persistent storage.'
+      : 'AWS Integration is active. Provide AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY in .env.example to persist directly to your AWS DynamoDB tables.'
+  });
+});
+
+// AWS S3 Direct Upload Endpoint
+app.post('/api/aws/s3-upload', async (req, res) => {
+  const { fileName, fileData, contentType } = req.body;
+  if (!fileName || !fileData) {
+    return res.status(400).json({ error: 'Missing fileName or fileData' });
+  }
+  const buffer = Buffer.from(fileData.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+  const s3Url = await uploadToS3(`uploads/${Date.now()}_${fileName}`, buffer, contentType || 'image/png');
+  
+  if (s3Url) {
+    res.json({ success: true, url: s3Url });
+  } else {
+    res.json({ 
+      success: false, 
+      error: 'AWS S3 bucket not configured or access denied. Managed storage active.',
+      url: fileData 
+    });
+  }
+});
+
+// Get all News (AWS DynamoDB synced)
+app.get('/api/news', async (req, res) => {
+  const dynamoItems = await scanDynamoTable(getAwsConfig().newsTable);
+  if (dynamoItems && dynamoItems.length > 0) {
+    newsDatabase = dynamoItems as NewsItem[];
+  }
   res.json(newsDatabase);
 });
 
-// Create News Item (Admin)
-app.post('/api/news', (req, res) => {
+// Create News Item (Admin) (AWS DynamoDB synced)
+app.post('/api/news', async (req, res) => {
   const { 
-    title, summary, content, category, imageUrl, galleryImages,
+    id, title, summary, content, category, imageUrl, galleryImages,
     seoTitle, metaDescription, focusKeywords, canonicalUrl, jsonLdSchema,
     authorByline, eeatDetails, rssReferenceUrl, rssSourceTitle, rssPublishDate
   } = req.body;
@@ -777,7 +823,7 @@ app.post('/api/news', (req, res) => {
     return res.status(400).json({ error: 'Missing required fields for news' });
   }
   const newItem: NewsItem = {
-    id: `n${newsDatabase.length + 1}_${Date.now()}`,
+    id: id || `n${newsDatabase.length + 1}_${Date.now()}`,
     title,
     summary,
     content,
@@ -804,11 +850,12 @@ app.post('/api/news', (req, res) => {
     rssPublishDate
   };
   newsDatabase.unshift(newItem);
+  await putDynamoItem(getAwsConfig().newsTable, newItem);
   res.status(201).json(newItem);
 });
 
-// Edit News Item (Admin)
-app.put('/api/news/:id', (req, res) => {
+// Edit News Item (Admin) (AWS DynamoDB synced)
+app.put('/api/news/:id', async (req, res) => {
   const { id } = req.params;
   const { 
     title, summary, content, category, imageUrl, galleryImages, date,
@@ -841,17 +888,19 @@ app.put('/api/news/:id', (req, res) => {
     rssSourceTitle: rssSourceTitle ?? newsDatabase[index].rssSourceTitle,
     rssPublishDate: rssPublishDate ?? newsDatabase[index].rssPublishDate,
   };
+  await putDynamoItem(getAwsConfig().newsTable, newsDatabase[index]);
   res.json(newsDatabase[index]);
 });
 
-// Delete News Item (Admin)
-app.delete('/api/news/:id', (req, res) => {
+// Delete News Item (Admin) (AWS DynamoDB synced)
+app.delete('/api/news/:id', async (req, res) => {
   const { id } = req.params;
   const index = newsDatabase.findIndex(n => n.id === id);
   if (index === -1) {
     return res.status(404).json({ error: 'News item not found in memory database' });
   }
   const deleted = newsDatabase.splice(index, 1);
+  await deleteDynamoItem(getAwsConfig().newsTable, { id });
   res.json({ success: true, deleted: deleted[0] });
 });
 
@@ -909,32 +958,35 @@ app.delete('/api/lore/:id', (req, res) => {
   res.json({ success: true, deleted: deleted[0] });
 });
 
-// Get User Submissions
-app.get('/api/submissions', (req, res) => {
+// Get User Submissions (AWS DynamoDB synced)
+app.get('/api/submissions', async (req, res) => {
+  const dynamoItems = await scanDynamoTable(getAwsConfig().submissionsTable);
+  if (dynamoItems && dynamoItems.length > 0) {
+    submissionsDatabase = dynamoItems as UserSubmission[];
+  }
   res.json(submissionsDatabase);
 });
 
-// Delete User Submission (Admin Moderation)
-app.delete('/api/submissions/:id', (req, res) => {
+// Delete User Submission (Admin Moderation) (AWS DynamoDB synced)
+app.delete('/api/submissions/:id', async (req, res) => {
   const { id } = req.params;
   const index = submissionsDatabase.findIndex(s => s.id === id);
-  if (index === -1) {
-    // If not found in memory, still return ok to allow client handling
-    return res.status(204).json({ message: 'Submission already removed from memory' });
+  if (index !== -1) {
+    submissionsDatabase.splice(index, 1);
   }
-  const deleted = submissionsDatabase.splice(index, 1);
-  res.json({ success: true, deleted: deleted[0] });
+  await deleteDynamoItem(getAwsConfig().submissionsTable, { id });
+  res.json({ success: true });
 });
 
-// Create User Submission
-app.post('/api/submissions', (req, res) => {
-  const { author, title, type, contentUrl, contentBody, description, tokenize, copyrightLicense, royaltiesPercentage } = req.body;
+// Create User Submission (AWS DynamoDB synced)
+app.post('/api/submissions', async (req, res) => {
+  const { id: reqId, author, title, type, contentUrl, galleryImages, contentBody, description, tokenize, copyrightLicense, royaltiesPercentage } = req.body;
 
   if (!author || !title || !type || !description) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const id = `s${submissionsDatabase.length + 1}`;
+  const id = reqId || `s${submissionsDatabase.length + 1}_${Date.now()}`;
   const now = new Date().toISOString();
 
   let tokenDetails: TokenDetails | undefined;
@@ -957,6 +1009,7 @@ app.post('/api/submissions', (req, res) => {
     title,
     type,
     contentUrl,
+    galleryImages: Array.isArray(galleryImages) ? galleryImages : undefined,
     contentBody,
     description,
     date: now.split('T')[0],
@@ -966,6 +1019,7 @@ app.post('/api/submissions', (req, res) => {
   };
 
   submissionsDatabase.unshift(newSubmission);
+  await putDynamoItem(getAwsConfig().submissionsTable, newSubmission);
   res.status(201).json(newSubmission);
 });
 

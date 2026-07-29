@@ -240,7 +240,7 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
               className="px-8 py-3.5 bg-zelda-gold hover:bg-[#A6802C] text-white font-serif font-bold text-xs sm:text-sm uppercase tracking-widest rounded-xl shadow-lg transition-all cursor-pointer inline-flex items-center gap-2"
             >
               <Mail className="w-4 h-4" />
-              <span>Contact the Royal Guard via admin@zeldaseries.com</span>
+              <span>Contact the Royal Guard via contact@hyrulehub.com</span>
             </button>
           </div>
         </div>
@@ -257,7 +257,7 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
               Contact Us
             </h1>
             <p className="text-sm sm:text-base font-serif text-zelda-charcoal/80 max-w-xl mx-auto">
-              Send your inquiries, news tips, lore discoveries, or fan art submissions directly to <strong>admin@zeldaseries.com</strong>.
+              Send your inquiries, news tips, lore discoveries, or fan art submissions directly to <strong>contact@hyrulehub.com</strong>.
             </p>
           </div>
 
@@ -270,10 +270,10 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
                   <h3 className="font-serif font-bold text-xl text-zelda-green-forest uppercase tracking-wider">
-                    Dispatch Sent to admin@zeldaseries.com!
+                    Dispatch Sent to Royal Guard!
                   </h3>
                   <p className="text-xs sm:text-sm text-zelda-charcoal/80 max-w-md mx-auto leading-relaxed">
-                    Thank you, <strong>{contactName}</strong>. Your message regarding <i>"{contactSubject}"</i> has been dispatched directly to <u>admin@zeldaseries.com</u>. Our stewards will respond to <u>{contactEmail}</u> within 1-2 sun cycles.
+                    Thank you, <strong>{contactName}</strong>. Your message regarding <i>"{contactSubject}"</i> has been dispatched directly to the Royal Stewards. Our stewards will respond to <u>{contactEmail}</u> within 1-2 sun cycles.
                   </p>
                   <button
                     onClick={resetContactForm}
@@ -350,7 +350,7 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
                     className="w-full py-3.5 bg-zelda-gold hover:bg-[#A6802C] text-white font-serif font-bold text-xs sm:text-sm uppercase tracking-widest rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Send className="w-4 h-4" />
-                    <span>Dispatch Scroll to admin@zeldaseries.com ▲</span>
+                    <span>Dispatch Scroll to contact@hyrulehub.com ▲</span>
                   </button>
                 </form>
               )}
@@ -368,11 +368,11 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
                   <div className="p-3 bg-white rounded-xl border border-zelda-border-sand/60 space-y-1">
                     <div className="font-serif font-bold text-xs text-zelda-green-forest uppercase">Official Email</div>
                     <a 
-                      href="mailto:admin@zeldaseries.com" 
+                      href="mailto:contact@hyrulehub.com" 
                       className="text-zelda-gold hover:underline font-bold flex items-center gap-1.5 break-all"
                     >
                       <Mail className="w-4 h-4 flex-shrink-0" />
-                      <span>admin@zeldaseries.com</span>
+                      <span>contact@hyrulehub.com</span>
                     </a>
                   </div>
 
@@ -399,7 +399,7 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
                   Response Commitment
                 </h4>
                 <p>
-                  All dispatches sent through this form or directly to <strong>admin@zeldaseries.com</strong> are reviewed daily by the alliance stewards. Expect a response within 24 hours.
+                  All dispatches sent through this form or directly to <strong>contact@hyrulehub.com</strong> are reviewed daily by the alliance stewards. Expect a response within 24 hours.
                 </p>
               </div>
             </div>
@@ -446,7 +446,7 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
                 Your data is utilized strictly for operating the alliance sanctuary. We <strong>NEVER</strong> sell, rent, or trade user information to third-party brokers or advertisers.
               </p>
               <p>
-                Uses include displaying your attribution on fan submissions, preserving your bookmarked news chronicles, verifying admin credentials, and responding to inquiries sent to <strong>admin@zeldaseries.com</strong>.
+                Uses include displaying your attribution on fan submissions, preserving your bookmarked news chronicles, verifying admin credentials, and responding to inquiries sent to <strong>contact@hyrulehub.com</strong>.
               </p>
             </section>
 
@@ -464,7 +464,7 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
                 <span className="text-zelda-gold font-mono">4.</span> Your Rights & Data Deletion
               </h2>
               <p>
-                You retain full rights over your personal data and creative uploads. If you wish to permanently delete your account or request data removal, please contact us at <a href="mailto:admin@zeldaseries.com" className="text-zelda-gold font-bold underline">admin@zeldaseries.com</a>.
+                You retain full rights over your personal data and creative uploads. If you wish to permanently delete your account or request data removal, please contact us at <a href="mailto:contact@hyrulehub.com" className="text-zelda-gold font-bold underline">contact@hyrulehub.com</a>.
               </p>
             </section>
           </div>
@@ -491,14 +491,14 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-zelda-border-sand shadow-xs space-y-4">
               <h3 className="font-serif font-bold text-base uppercase text-zelda-green-forest tracking-wider flex items-center gap-2 border-b border-zelda-border-sand/40 pb-2">
                 <Film className="w-5 h-5 text-zelda-gold" />
-                1. News & Movie Chronicles
+                1. News Feed & Archived Chronicles
               </h3>
               <div className="space-y-2 text-xs sm:text-sm">
                 <button
                   onClick={() => onNavigateTab('news')}
                   className="w-full p-2.5 hover:bg-amber-50 rounded-xl text-left flex items-center justify-between text-zelda-charcoal hover:text-zelda-gold transition-colors font-serif font-bold group cursor-pointer"
                 >
-                  <span>Latest News Feed & Live Movie Chronicles</span>
+                  <span>Latest News Feed (Sorted Newest First & Top 6 Featured)</span>
                   <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                 </button>
 
@@ -506,7 +506,7 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
                   onClick={() => onNavigateTab('news')}
                   className="w-full p-2.5 hover:bg-amber-50 rounded-xl text-left flex items-center justify-between text-zelda-charcoal hover:text-zelda-gold transition-colors font-serif font-bold group cursor-pointer"
                 >
-                  <span>Zelda Movie Live Countdown Clock</span>
+                  <span>Chronicle Archives (Title Links, Excerpts & 20 Per Page)</span>
                   <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                 </button>
 
@@ -514,24 +514,24 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
                   onClick={() => onNavigateTab('news')}
                   className="w-full p-2.5 hover:bg-amber-50 rounded-xl text-left flex items-center justify-between text-zelda-charcoal hover:text-zelda-gold transition-colors font-serif font-bold group cursor-pointer"
                 >
-                  <span>Community Chronicles & Media Releases</span>
+                  <span>Live Zelda Movie Release Countdown Clock</span>
                   <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
             </div>
 
-            {/* Category 2: Lore Archives */}
+            {/* Category 2: Archives (Renamed from Lore) */}
             <div className="bg-white p-6 rounded-2xl border border-zelda-border-sand shadow-xs space-y-4">
               <h3 className="font-serif font-bold text-base uppercase text-zelda-green-forest tracking-wider flex items-center gap-2 border-b border-zelda-border-sand/40 pb-2">
                 <BookOpen className="w-5 h-5 text-zelda-gold" />
-                2. Lore Labyrinth & Royal Library
+                2. Archives (100x100 Thumbnail Categories & Items)
               </h3>
               <div className="space-y-2 text-xs sm:text-sm">
                 <button
                   onClick={() => onNavigateTab('lore')}
                   className="w-full p-2.5 hover:bg-amber-50 rounded-xl text-left flex items-center justify-between text-zelda-charcoal hover:text-zelda-gold transition-colors font-serif font-bold group cursor-pointer"
                 >
-                  <span>Canonical Timeline Archives (Skyward to TOTK)</span>
+                  <span>Merchandise (Figurines, Amiibo, Apparel, Vinyl)</span>
                   <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                 </button>
 
@@ -539,7 +539,7 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
                   onClick={() => onNavigateTab('lore')}
                   className="w-full p-2.5 hover:bg-amber-50 rounded-xl text-left flex items-center justify-between text-zelda-charcoal hover:text-zelda-gold transition-colors font-serif font-bold group cursor-pointer"
                 >
-                  <span>Ancient Relics & Sheikah Technology Lore</span>
+                  <span>Live Action Movie (Casting, Sets, Production)</span>
                   <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                 </button>
 
@@ -547,7 +547,31 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
                   onClick={() => onNavigateTab('lore')}
                   className="w-full p-2.5 hover:bg-amber-50 rounded-xl text-left flex items-center justify-between text-zelda-charcoal hover:text-zelda-gold transition-colors font-serif font-bold group cursor-pointer"
                 >
-                  <span>Goddess Mythos & Royal Decrees</span>
+                  <span>Games (Every Official Zelda Game Sub-category)</span>
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                <button
+                  onClick={() => onNavigateTab('lore')}
+                  className="w-full p-2.5 hover:bg-amber-50 rounded-xl text-left flex items-center justify-between text-zelda-charcoal hover:text-zelda-gold transition-colors font-serif font-bold group cursor-pointer"
+                >
+                  <span>Publications (Hyrule Historia, Art & Artifacts, Manga)</span>
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                <button
+                  onClick={() => onNavigateTab('lore')}
+                  className="w-full p-2.5 hover:bg-amber-50 rounded-xl text-left flex items-center justify-between text-zelda-charcoal hover:text-zelda-gold transition-colors font-serif font-bold group cursor-pointer"
+                >
+                  <span>Game Lore (Timeline, Sheikah & Zonai, Triforce)</span>
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                <button
+                  onClick={() => onNavigateTab('lore')}
+                  className="w-full p-2.5 hover:bg-amber-50 rounded-xl text-left flex items-center justify-between text-zelda-charcoal hover:text-zelda-gold transition-colors font-serif font-bold group cursor-pointer"
+                >
+                  <span>Media and Fandom (Orchestra Tours, Speedruns, Cosplay)</span>
                   <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
@@ -557,14 +581,14 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-zelda-border-sand shadow-xs space-y-4">
               <h3 className="font-serif font-bold text-base uppercase text-zelda-green-forest tracking-wider flex items-center gap-2 border-b border-zelda-border-sand/40 pb-2">
                 <Award className="w-5 h-5 text-zelda-gold" />
-                3. Creator Club & Web3 IP Ledger
+                3. Creator Club & Image Galleries
               </h3>
               <div className="space-y-2 text-xs sm:text-sm">
                 <button
                   onClick={() => onNavigateTab('submissions', 'feed')}
                   className="w-full p-2.5 hover:bg-amber-50 rounded-xl text-left flex items-center justify-between text-zelda-charcoal hover:text-zelda-gold transition-colors font-serif font-bold group cursor-pointer"
                 >
-                  <span>Creator Showcase Feed (Art, Music, Games, Cosplay)</span>
+                  <span>Creator Showcase Feed (Multi-Image Lightbox Galleries)</span>
                   <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                 </button>
 
@@ -572,7 +596,7 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
                   onClick={() => onNavigateTab('submissions', 'submit')}
                   className="w-full p-2.5 hover:bg-amber-50 rounded-xl text-left flex items-center justify-between text-zelda-charcoal hover:text-zelda-gold transition-colors font-serif font-bold group cursor-pointer"
                 >
-                  <span>Submit Fan Work & Generate Web3 Certificate</span>
+                  <span>Submit Work & Add Gallery Images + Web3 NFT Parchment</span>
                   <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
@@ -582,14 +606,14 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-zelda-border-sand shadow-xs space-y-4">
               <h3 className="font-serif font-bold text-base uppercase text-zelda-green-forest tracking-wider flex items-center gap-2 border-b border-zelda-border-sand/40 pb-2">
                 <Compass className="w-5 h-5 text-zelda-gold" />
-                4. AI Game Guide & Interactive Assistant
+                4. AI Walkthrough Companion
               </h3>
               <div className="space-y-2 text-xs sm:text-sm">
                 <button
                   onClick={() => onNavigateTab('guide')}
                   className="w-full p-2.5 hover:bg-amber-50 rounded-xl text-left flex items-center justify-between text-zelda-charcoal hover:text-zelda-gold transition-colors font-serif font-bold group cursor-pointer"
                 >
-                  <span>Interactive AI Zelda Walkthrough Assistant</span>
+                  <span>Interactive AI Zelda Shrine & Quest Guide</span>
                   <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
@@ -639,7 +663,7 @@ export const FooterPageViews: React.FC<FooterPageViewsProps> = ({
                   onClick={() => onNavigateFooter('contact')}
                   className="w-full p-2.5 hover:bg-amber-50 rounded-xl text-left flex items-center justify-between text-zelda-charcoal hover:text-zelda-gold transition-colors font-serif font-bold group cursor-pointer"
                 >
-                  <span>Contact Us (admin@zeldaseries.com)</span>
+                  <span>Contact Us (contact@hyrulehub.com)</span>
                   <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                 </button>
 
