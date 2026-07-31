@@ -59,6 +59,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Analytics } from '@vercel/analytics/react';
 import { NewsItem, LoreEntry, UserSubmission, SubmissionType, TokenDetails, Comment, SidebarBlock } from './types';
 import { CommentsSection } from './components/CommentsSection';
 import { NewsContentRenderer } from './components/NewsContentRenderer';
@@ -6155,6 +6156,8 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+
+      <Analytics />
 
     </div>
   );
