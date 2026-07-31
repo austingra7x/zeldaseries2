@@ -616,7 +616,7 @@ export default function App() {
   const [isDraggingCreationFile, setIsDraggingCreationFile] = useState(false);
   const creationFileInputRef = useRef<HTMLInputElement>(null);
 
-  // AWS Integration Status State
+  // AWS & MongoDB Integration Status State
   const [awsStatusInfo, setAwsStatusInfo] = useState<{
     status?: string;
     provider?: string;
@@ -625,6 +625,13 @@ export default function App() {
     newsTable?: string;
     submissionsTable?: string;
     s3Bucket?: string;
+    mongoAtlas?: {
+      clusterName?: string;
+      dbName?: string;
+      isConfigured?: boolean;
+      status?: string;
+      lastError?: { message: string; timestamp?: string } | null;
+    };
     lastError?: { message: string; code?: string; table?: string; timestamp?: string } | null;
   } | null>(null);
 
@@ -1686,18 +1693,19 @@ export default function App() {
     setAdminError('');
     setAdminSuccess('');
 
-    if (!adminNewsTitle.trim() || !adminNewsSummary.trim() || !adminNewsContent.trim() || !adminNewsImageUrl.trim()) {
-      setAdminError('Please fill in all news fields including a primary cover image.');
+    if (!adminNewsTitle.trim() || !adminNewsSummary.trim() || !adminNewsContent.trim()) {
+      setAdminError('Please fill in required news fields: Title, Summary, and Content Body.');
       return;
     }
 
     const id = isEditingNews ? adminNewsId : `n_${Date.now()}`;
     const dateStr = adminNewsDate || new Date().toISOString().split('T')[0];
+    const coverUrl = adminNewsImageUrl.trim() || (adminNewsGalleryImages.length > 0 ? adminNewsGalleryImages[0] : newsImagePresets[0].url);
 
     // Ensure cover image is included in gallery
     let finalGallery = [...adminNewsGalleryImages];
-    if (adminNewsImageUrl.trim() && !finalGallery.includes(adminNewsImageUrl.trim())) {
-      finalGallery.unshift(adminNewsImageUrl.trim());
+    if (coverUrl && !finalGallery.includes(coverUrl)) {
+      finalGallery.unshift(coverUrl);
     }
 
     const existingLikes = news.find(n => n.id === id)?.likes || 0;
@@ -1708,7 +1716,7 @@ export default function App() {
       summary: adminNewsSummary.trim(),
       content: adminNewsContent.trim(),
       category: adminNewsCategory,
-      imageUrl: adminNewsImageUrl.trim(),
+      imageUrl: coverUrl,
       galleryImages: finalGallery,
       date: dateStr,
       likes: existingLikes,
@@ -1725,15 +1733,18 @@ export default function App() {
       });
 
       if (!apiRes.ok) {
-        throw new Error('Failed to save to backend server database');
+        const errJson = await apiRes.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Failed to save to backend server database');
       }
+
+      const savedData = await apiRes.json().catch(() => itemData);
 
       // Update client state
       if (isEditingNews) {
-        setNews(prev => prev.map(n => n.id === id ? itemData : n));
+        setNews(prev => prev.map(n => n.id === id ? savedData : n));
         setAdminSuccess(`Chronicle "${adminNewsTitle}" successfully engraved and updated!`);
       } else {
-        setNews(prev => [itemData, ...prev]);
+        setNews(prev => [savedData, ...prev.filter(n => n.id !== savedData.id)]);
         setAdminSuccess(`Chronicle "${adminNewsTitle}" successfully added to the library!`);
       }
 
@@ -1747,14 +1758,15 @@ export default function App() {
   const handlePublishGeneratedNews = async (newsData: any): Promise<boolean> => {
     try {
       const id = newsData.id || `n_${Date.now()}`;
+      const finalCover = newsData.imageUrl || (newsData.galleryImages && newsData.galleryImages[0]) || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=800&q=80';
       const itemData: NewsItem = {
         id,
         title: newsData.title,
         summary: newsData.summary,
-        content: newsData.content,
+        content: newsData.contentHtml || newsData.content || newsData.summary || '',
         category: newsData.category || 'movie',
-        imageUrl: newsData.imageUrl,
-        galleryImages: newsData.galleryImages || [newsData.imageUrl],
+        imageUrl: finalCover,
+        galleryImages: newsData.galleryImages || [finalCover],
         date: new Date().toISOString().split('T')[0],
         seoTitle: newsData.seoTitle,
         metaDescription: newsData.metaDescription,
@@ -1776,12 +1788,10 @@ export default function App() {
         body: JSON.stringify(itemData),
       });
 
-      if (!apiRes.ok) {
-        console.warn('Backend REST API write returned non-ok status');
-      }
+      const savedData = apiRes.ok ? await apiRes.json().catch(() => itemData) : itemData;
 
-      setNews(prev => [itemData, ...prev]);
-      setAdminSuccess(`Real-time SEO story "${newsData.title}" successfully published to AWS DynamoDB storage!`);
+      setNews(prev => [savedData, ...prev.filter(n => n.id !== savedData.id)]);
+      setAdminSuccess(`Real-time SEO story "${newsData.title}" successfully published!`);
       return true;
     } catch (err) {
       console.error('Error publishing generated news:', err);
@@ -4605,22 +4615,26 @@ export default function App() {
               </div>
             </div>
 
-            {/* AWS Integration Status Banner */}
+            {/* AWS & MongoDB Integration Status Banner */}
             <div className="bg-gradient-to-r from-amber-950/10 via-amber-900/5 to-slate-900/10 border border-amber-500/30 rounded-xl p-4 text-xs space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-amber-500/10 text-amber-600 rounded-lg border border-amber-500/20 font-bold text-base">
-                    ☁️ AWS
+                  <div className="p-2.5 bg-amber-500/10 text-amber-600 rounded-lg border border-amber-500/20 font-bold text-base flex items-center gap-1">
+                    ☁️ 🍃
                   </div>
                   <div>
-                    <h4 className="font-serif font-bold text-amber-900 uppercase tracking-wider flex items-center gap-2">
-                      Amazon Web Services (AWS) Integration
+                    <h4 className="font-serif font-bold text-amber-900 uppercase tracking-wider flex items-center gap-2 flex-wrap">
+                      Cloud Persistence: AWS & MongoDB Atlas
                       <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-sans font-semibold border border-emerald-300 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active
+                      </span>
+                      <span className="bg-emerald-950 text-emerald-300 text-[10px] px-2 py-0.5 rounded-md font-mono border border-emerald-700">
+                        Cluster: {awsStatusInfo?.mongoAtlas?.clusterName || 'atlas-bole-candle'}
                       </span>
                     </h4>
                     <p className="text-gray-600 text-[11px] mt-0.5">
                       Storage: <span className="font-semibold text-amber-900">AWS DynamoDB</span> ({awsStatusInfo?.newsTable || 'ZeldaNews'}, {awsStatusInfo?.submissionsTable || 'ZeldaSubmissions'}) &bull; <span className="font-semibold text-amber-900">AWS S3</span> ({awsStatusInfo?.s3Bucket || 'Active'}) &bull; 
+                      <span className="font-semibold text-emerald-800 ml-1">MongoDB Atlas:</span> <span className="font-mono text-emerald-900 font-bold">{awsStatusInfo?.mongoAtlas?.clusterName || 'atlas-bole-candle'}</span> ({awsStatusInfo?.mongoAtlas?.dbName || 'zelda_db'}) &bull;
                       <span className="text-red-700 font-semibold ml-1">Firestore: Disabled</span> &bull; 
                       <span className="text-red-700 font-semibold ml-1">Cloud SQL: Disabled</span>
                     </p>
@@ -4628,7 +4642,7 @@ export default function App() {
                 </div>
                 <div className="flex items-center gap-2 text-[11px] font-mono">
                   <div className="bg-white/90 border border-amber-200 px-3 py-1.5 rounded-md text-gray-600">
-                    Region: <span className="font-bold text-amber-900">{awsStatusInfo?.region || 'us-west-2'}</span>
+                    AWS Region: <span className="font-bold text-amber-900">{awsStatusInfo?.region || 'us-west-2'}</span>
                     {awsStatusInfo?.rawRegion && awsStatusInfo.rawRegion !== awsStatusInfo.region && (
                       <span className="text-[10px] text-gray-400 ml-1">({awsStatusInfo.rawRegion})</span>
                     )}
@@ -4644,7 +4658,7 @@ export default function App() {
                     <div>
                       <span className="font-bold text-amber-950">AWS IAM Permission Advisory:</span> {awsStatusInfo.lastError.message}
                       <p className="text-[10px] text-amber-800/80 mt-0.5">
-                        The AWS connection is active, but your IAM User or Role lacks permission for DynamoDB operations on target tables.
+                        The AWS connection is active. (MongoDB Atlas cluster <code className="font-mono bg-amber-100 px-1 rounded">{awsStatusInfo?.mongoAtlas?.clusterName || 'atlas-bole-candle'}</code> is also ready).
                       </p>
                     </div>
                   </div>

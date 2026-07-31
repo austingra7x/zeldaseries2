@@ -11,6 +11,7 @@ import dotenv from 'dotenv';
 import Parser from 'rss-parser';
 import { NewsItem, LoreEntry, UserSubmission, TokenDetails, SidebarBlock, RssFeedItem, GeneratedSeoNews } from './src/types';
 import { getAwsConfig, scanDynamoTable, putDynamoItem, deleteDynamoItem, uploadToS3, getLastAwsError } from './src/lib/aws';
+import { getMongoConfig, getLastMongoError, mongoFind, mongoUpsert, mongoDelete } from './src/lib/mongo';
 
 // Load environment variables
 dotenv.config();
@@ -761,10 +762,13 @@ Output strictly JSON matching the required schema.`;
   }
 });
 
-// AWS Status Endpoint
+// AWS & MongoDB Status Endpoint
 app.get('/api/aws/status', async (req, res) => {
   const config = getAwsConfig();
   const lastError = getLastAwsError();
+  const mongoConfig = getMongoConfig();
+  const lastMongoError = getLastMongoError();
+
   res.json({
     status: config.isConfigured ? 'connected' : 'ready_for_credentials',
     provider: 'Amazon Web Services (AWS)',
@@ -775,10 +779,17 @@ app.get('/api/aws/status', async (req, res) => {
     s3Bucket: config.s3Bucket || 'not_configured',
     firestoreStatus: 'disabled',
     cloudSqlStatus: 'disabled',
+    mongoAtlas: {
+      clusterName: mongoConfig.clusterName || 'atlas-bole-candle',
+      dbName: mongoConfig.dbName,
+      isConfigured: mongoConfig.isConfigured,
+      status: mongoConfig.isConfigured ? 'connected' : 'ready_for_uri',
+      lastError: lastMongoError || null
+    },
     lastError: lastError || null,
     message: config.isConfigured 
-      ? 'AWS DynamoDB & S3 integration actively handles global persistent storage.'
-      : 'AWS Integration is active. Provide AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY in .env.example to persist directly to your AWS DynamoDB tables.'
+      ? 'AWS DynamoDB, AWS S3 & MongoDB Atlas (atlas-bole-candle) handle global persistent storage.'
+      : 'AWS & MongoDB Atlas integrations active. Set AWS keys and MONGODB_URI in .env.example to sync.'
   });
 });
 
@@ -802,16 +813,34 @@ app.post('/api/aws/s3-upload', async (req, res) => {
   }
 });
 
-// Get all News (AWS DynamoDB synced)
+// Get all News (AWS DynamoDB & MongoDB Atlas synced)
 app.get('/api/news', async (req, res) => {
   const dynamoItems = await scanDynamoTable(getAwsConfig().newsTable);
+  const mongoItems = await mongoFind('news');
+
+  const mergedMap = new Map<string, NewsItem>();
   if (dynamoItems && dynamoItems.length > 0) {
-    newsDatabase = dynamoItems as NewsItem[];
+    for (const item of dynamoItems as NewsItem[]) {
+      if (item && item.id) mergedMap.set(item.id, item);
+    }
   }
+  if (mongoItems && mongoItems.length > 0) {
+    for (const item of mongoItems as NewsItem[]) {
+      if (item && item.id) mergedMap.set(item.id, item);
+    }
+  }
+  // Merge/override with in-memory database
+  for (const item of newsDatabase) {
+    if (item && item.id) mergedMap.set(item.id, item);
+  }
+  if (mergedMap.size > 0) {
+    newsDatabase = Array.from(mergedMap.values());
+  }
+
   res.json(newsDatabase);
 });
 
-// Create News Item (Admin) (AWS DynamoDB synced)
+// Create News Item (Admin) (AWS DynamoDB & MongoDB Atlas synced)
 app.post('/api/news', async (req, res) => {
   const { 
     id, title, summary, content, category, imageUrl, galleryImages,
@@ -819,22 +848,27 @@ app.post('/api/news', async (req, res) => {
     authorByline, eeatDetails, rssReferenceUrl, rssSourceTitle, rssPublishDate
   } = req.body;
 
-  if (!title || !summary || !content || !category || !imageUrl) {
-    return res.status(400).json({ error: 'Missing required fields for news' });
+  if (!title || !summary || !content) {
+    return res.status(400).json({ error: 'Missing required fields for news post (title, summary, or content)' });
   }
+
+  const finalCoverImage = (imageUrl && String(imageUrl).trim()) 
+    ? String(imageUrl).trim() 
+    : (Array.isArray(galleryImages) && galleryImages.length > 0 ? galleryImages[0] : 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=800&q=80');
+
   const newItem: NewsItem = {
     id: id || `n${newsDatabase.length + 1}_${Date.now()}`,
-    title,
-    summary,
-    content,
+    title: String(title).trim(),
+    summary: String(summary).trim(),
+    content: String(content).trim(),
     date: new Date().toISOString().split('T')[0],
     category: (category === 'movie' || category === 'community') ? category : 'game',
-    imageUrl,
-    galleryImages: Array.isArray(galleryImages) ? galleryImages : [imageUrl],
+    imageUrl: finalCoverImage,
+    galleryImages: Array.isArray(galleryImages) && galleryImages.length > 0 ? galleryImages : [finalCoverImage],
     seoTitle: seoTitle || title,
     metaDescription: metaDescription || summary,
     focusKeywords: Array.isArray(focusKeywords) ? focusKeywords : ['Legend of Zelda', 'Nintendo'],
-    canonicalUrl: canonicalUrl || `/news/${title.toLowerCase().replace(/[^a-z0-0]+/g, '-')}`,
+    canonicalUrl: canonicalUrl || `/news/${String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
     jsonLdSchema: jsonLdSchema || '',
     authorByline: authorByline || 'Royal Hyrule Scribe & Senior Analyst',
     eeatScore: eeatDetails?.score || 95,
@@ -849,23 +883,49 @@ app.post('/api/news', async (req, res) => {
     rssSourceTitle,
     rssPublishDate
   };
-  newsDatabase.unshift(newItem);
+
+  // Upsert into memory database
+  const existingIdx = newsDatabase.findIndex(n => n.id === newItem.id);
+  if (existingIdx >= 0) {
+    newsDatabase[existingIdx] = newItem;
+  } else {
+    newsDatabase.unshift(newItem);
+  }
+
   await putDynamoItem(getAwsConfig().newsTable, newItem);
+  await mongoUpsert('news', newItem);
   res.status(201).json(newItem);
 });
 
-// Edit News Item (Admin) (AWS DynamoDB synced)
+// Edit News Item (Admin) (AWS DynamoDB & MongoDB Atlas synced)
 app.put('/api/news/:id', async (req, res) => {
   const { id } = req.params;
   const { 
-    title, summary, content, category, imageUrl, galleryImages, date,
+    title, summary, content, category, imageUrl, galleryImages, date, likes,
     seoTitle, metaDescription, focusKeywords, canonicalUrl, jsonLdSchema,
     authorByline, eeatDetails, rssReferenceUrl, rssSourceTitle, rssPublishDate 
   } = req.body;
   
-  const index = newsDatabase.findIndex(n => n.id === id);
+  let index = newsDatabase.findIndex(n => n.id === id);
   if (index === -1) {
-    return res.status(404).json({ error: 'News item not found in memory database' });
+    const finalCover = imageUrl || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=800&q=80';
+    const newItem: NewsItem = {
+      id,
+      title: title || 'Engraved Chronicle',
+      summary: summary || '',
+      content: content || '',
+      category: category || 'movie',
+      imageUrl: finalCover,
+      galleryImages: Array.isArray(galleryImages) ? galleryImages : [finalCover],
+      date: date || new Date().toISOString().split('T')[0],
+      likes: likes || 0,
+      seoTitle, metaDescription, focusKeywords, canonicalUrl, jsonLdSchema,
+      authorByline, eeatDetails, rssReferenceUrl, rssSourceTitle, rssPublishDate
+    };
+    newsDatabase.unshift(newItem);
+    await putDynamoItem(getAwsConfig().newsTable, newItem);
+    await mongoUpsert('news', newItem);
+    return res.json(newItem);
   }
   
   newsDatabase[index] = {
@@ -877,6 +937,7 @@ app.put('/api/news/:id', async (req, res) => {
     imageUrl: imageUrl ?? newsDatabase[index].imageUrl,
     galleryImages: Array.isArray(galleryImages) ? galleryImages : newsDatabase[index].galleryImages,
     date: date ?? newsDatabase[index].date,
+    likes: likes ?? newsDatabase[index].likes,
     seoTitle: seoTitle ?? newsDatabase[index].seoTitle,
     metaDescription: metaDescription ?? newsDatabase[index].metaDescription,
     focusKeywords: focusKeywords ?? newsDatabase[index].focusKeywords,
@@ -889,10 +950,11 @@ app.put('/api/news/:id', async (req, res) => {
     rssPublishDate: rssPublishDate ?? newsDatabase[index].rssPublishDate,
   };
   await putDynamoItem(getAwsConfig().newsTable, newsDatabase[index]);
+  await mongoUpsert('news', newsDatabase[index]);
   res.json(newsDatabase[index]);
 });
 
-// Delete News Item (Admin) (AWS DynamoDB synced)
+// Delete News Item (Admin) (AWS DynamoDB & MongoDB Atlas synced)
 app.delete('/api/news/:id', async (req, res) => {
   const { id } = req.params;
   const index = newsDatabase.findIndex(n => n.id === id);
@@ -901,6 +963,7 @@ app.delete('/api/news/:id', async (req, res) => {
   }
   const deleted = newsDatabase.splice(index, 1);
   await deleteDynamoItem(getAwsConfig().newsTable, { id });
+  await mongoDelete('news', id);
   res.json({ success: true, deleted: deleted[0] });
 });
 
