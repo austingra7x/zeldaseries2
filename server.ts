@@ -26,78 +26,101 @@ app.use(express.json({ limit: '10mb' }));
 const GOOGLE_NEWS_ZELDA_RSS = 'https://news.google.com/rss/search?q=legend+of+zelda&hl=en-US&gl=US&ceid=US:en';
 
 async function fetchZeldaRssFeed(): Promise<RssFeedItem[]> {
-  try {
-    const parser = new Parser({
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) RoyalHyruleNews/1.0' },
-      timeout: 8000,
-    });
-    const feed = await parser.parseURL(GOOGLE_NEWS_ZELDA_RSS);
-    
-    if (!feed.items || feed.items.length === 0) {
-      throw new Error('RSS feed returned zero items');
-    }
+  const feedUrls = [
+    GOOGLE_NEWS_ZELDA_RSS,
+    'https://news.google.com/rss/search?q=zelda+nintendo&hl=en-US&gl=US&ceid=US:en',
+  ];
 
-    return feed.items.slice(0, 15).map((item, idx) => {
-      const rawSnippet = item.contentSnippet || item.content || item.summary || item.title || '';
-      const cleanSnippet = rawSnippet.replace(/<[^>]*>?/gm, '').trim();
+  const parser = new Parser({
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+    },
+    timeout: 8000,
+  });
+
+  for (const url of feedUrls) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} when fetching ${url}`);
+      }
+
+      const xmlText = await response.text();
+      const feed = await parser.parseString(xmlText);
       
-      let sourceName = 'Google News Reference';
-      if (item.title && item.title.includes(' - ')) {
-        const parts = item.title.split(' - ');
-        sourceName = parts[parts.length - 1].trim();
-      } else if ((item as any).source) {
-        sourceName = typeof (item as any).source === 'string' ? (item as any).source : ((item as any).source._ || 'News Outlet');
-      }
+      if (feed && feed.items && feed.items.length > 0) {
+        return feed.items.slice(0, 15).map((item, idx) => {
+          const rawSnippet = item.contentSnippet || item.content || item.summary || item.title || '';
+          const cleanSnippet = rawSnippet.replace(/<[^>]*>?/gm, '').trim();
+          
+          let sourceName = 'Google News Reference';
+          if (item.title && item.title.includes(' - ')) {
+            const parts = item.title.split(' - ');
+            sourceName = parts[parts.length - 1].trim();
+          } else if ((item as any).source) {
+            sourceName = typeof (item as any).source === 'string' ? (item as any).source : ((item as any).source._ || 'News Outlet');
+          }
 
-      const cleanTitle = item.title ? item.title.replace(/\s+-\s+[^-]+$/, '').trim() : 'Zelda News Update';
+          const cleanTitle = item.title ? item.title.replace(/\s+-\s+[^-]+$/, '').trim() : 'Zelda News Update';
 
-      return {
-        id: item.guid || `rss_${idx}_${Date.now()}`,
-        title: cleanTitle,
-        link: item.link || GOOGLE_NEWS_ZELDA_RSS,
-        pubDate: item.pubDate || new Date().toUTCString(),
-        snippet: cleanSnippet || 'Latest real-time news update from Google News for Legend of Zelda.',
-        source: sourceName,
-        guid: item.guid,
-      };
-    });
-  } catch (err: any) {
-    console.warn('Failed to fetch live RSS feed from Google News, serving fallback reference feed:', err?.message || err);
-    return [
-      {
-        id: 'rss_fallback_1',
-        title: 'Legend of Zelda Live-Action Movie Production Reaches Casting Phase',
-        link: GOOGLE_NEWS_ZELDA_RSS,
-        pubDate: new Date().toUTCString(),
-        snippet: 'Sony Pictures and Nintendo have officially entered open casting for Link and Princess Zelda in Wes Ball\'s upcoming live-action adaptation.',
-        source: 'Variety & Nintendo Life'
-      },
-      {
-        id: 'rss_fallback_2',
-        title: 'Nintendo Switch 2 Zelda Tech Demo Showcases Ray-Traced Hyrule Castle',
-        link: GOOGLE_NEWS_ZELDA_RSS,
-        pubDate: new Date(Date.now() - 3600000 * 5).toUTCString(),
-        snippet: 'Industry insiders report that Nintendo demonstrated next-gen Tears of the Kingdom visuals running at 4K 60fps with DLSS acceleration.',
-        source: 'IGN'
-      },
-      {
-        id: 'rss_fallback_3',
-        title: 'Zelda Symphony Concert "Echoes of Hyrule" Expands World Tour',
-        link: GOOGLE_NEWS_ZELDA_RSS,
-        pubDate: new Date(Date.now() - 3600000 * 12).toUTCString(),
-        snippet: 'Due to overwhelming demand, 15 new dates have been added across Europe and Asia for Koji Kondo\'s legendary orchestral tour.',
-        source: 'Eurogamer'
-      },
-      {
-        id: 'rss_fallback_4',
-        title: 'Tears of the Kingdom Speedrunners Set New Any% World Record Under 45 Minutes',
-        link: GOOGLE_NEWS_ZELDA_RSS,
-        pubDate: new Date(Date.now() - 3600000 * 24).toUTCString(),
-        snippet: 'A revolutionary glitchless fusing route allows players to bypass the Gloom Hands and reach Demon King Ganondorf in record speed.',
-        source: 'GamesRadar+'
+          return {
+            id: item.guid || `rss_${idx}_${Date.now()}`,
+            title: cleanTitle,
+            link: item.link || url,
+            pubDate: item.pubDate || new Date().toUTCString(),
+            snippet: cleanSnippet || 'Latest real-time news update from Google News for Legend of Zelda.',
+            source: sourceName,
+            guid: item.guid,
+          };
+        });
       }
-    ];
+    } catch (err: any) {
+      console.warn(`Attempt to fetch RSS from ${url} failed:`, err?.message || err);
+    }
   }
+
+  // Fallback reference feed items if live requests are blocked or offline
+  return [
+    {
+      id: 'rss_fallback_1',
+      title: 'Legend of Zelda Live-Action Movie Production Reaches Casting Phase',
+      link: GOOGLE_NEWS_ZELDA_RSS,
+      pubDate: new Date().toUTCString(),
+      snippet: 'Sony Pictures and Nintendo have officially entered open casting for Link and Princess Zelda in Wes Ball\'s upcoming live-action adaptation.',
+      source: 'Variety & Nintendo Life'
+    },
+    {
+      id: 'rss_fallback_2',
+      title: 'Nintendo Switch 2 Zelda Tech Demo Showcases Ray-Traced Hyrule Castle',
+      link: GOOGLE_NEWS_ZELDA_RSS,
+      pubDate: new Date(Date.now() - 3600000 * 5).toUTCString(),
+      snippet: 'Industry insiders report that Nintendo demonstrated next-gen Tears of the Kingdom visuals running at 4K 60fps with DLSS acceleration.',
+      source: 'IGN'
+    },
+    {
+      id: 'rss_fallback_3',
+      title: 'Zelda Symphony Concert "Echoes of Hyrule" Expands World Tour',
+      link: GOOGLE_NEWS_ZELDA_RSS,
+      pubDate: new Date(Date.now() - 3600000 * 12).toUTCString(),
+      snippet: 'Due to overwhelming demand, 15 new dates have been added across Europe and Asia for Koji Kondo\'s legendary orchestral tour.',
+      source: 'Eurogamer'
+    },
+    {
+      id: 'rss_fallback_4',
+      title: 'Tears of the Kingdom Speedrunners Set New Any% World Record Under 45 Minutes',
+      link: GOOGLE_NEWS_ZELDA_RSS,
+      pubDate: new Date(Date.now() - 3600000 * 24).toUTCString(),
+      snippet: 'A revolutionary glitchless fusing route allows players to bypass the Gloom Hands and reach Demon King Ganondorf in record speed.',
+      source: 'GamesRadar+'
+    }
+  ];
 }
 
 // Lazy initialize Gemini client as requested in safety guidelines
@@ -165,8 +188,8 @@ async function generateContentWithRetry(ai: GoogleGenAI, params: any, retries = 
     }
   }
 
-  // Fallback to gemini-3.1-flash-lite if the primary model failed due to a transient issue
-  if (params.model === 'gemini-3.5-flash') {
+  // Fallback to gemini-2.0-flash-lite if the primary model failed due to a transient issue
+  if (params.model === 'gemini-2.5-flash') {
     const lastErrMsg = lastError?.message || String(lastError);
     const isDepleted = 
       lastError?.status === 429 || 
@@ -178,12 +201,12 @@ async function generateContentWithRetry(ai: GoogleGenAI, params: any, retries = 
       lastErrMsg.includes('quota');
 
     if (!isDepleted) {
-      console.log('Falling back to gemini-3.1-flash-lite due to transient error on gemini-3.5-flash...');
-      const fallbackParams = { ...params, model: 'gemini-3.1-flash-lite' };
+      console.log('Falling back to gemini-2.0-flash-lite due to transient error on gemini-2.5-flash...');
+      const fallbackParams = { ...params, model: 'gemini-2.0-flash-lite' };
       try {
         return await ai.models.generateContent(fallbackParams);
       } catch (fallbackError: any) {
-        console.error('Fallback model gemini-3.1-flash-lite also failed:', fallbackError?.message || fallbackError);
+        console.error('Fallback model gemini-2.0-flash-lite also failed:', fallbackError?.message || fallbackError);
         throw lastError || fallbackError;
       }
     }
@@ -678,7 +701,7 @@ Output strictly JSON matching the required schema.`;
     const systemInstruction = `You are a World-Class SEO Strategist and Senior Nintendo Journalist. You write authoritative, beautifully formatted game news articles that pass Google Search Quality E-E-A-T standards.`;
 
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-3.5-flash',
+      model: 'gemini-2.5-flash',
       contents: {
         parts: [{ text: promptText }],
       },
@@ -1163,7 +1186,7 @@ Format your response exactly as a JSON object matching the requested schema. Mak
 The itemsChecklist must contain real items from that game (like hookshot, bow, fire arrows, iron boots, etc.) that are helpful for this dungeon, along with their location.`;
 
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-3.5-flash',
+      model: 'gemini-2.5-flash',
       contents: {
         parts: userContentParts,
       },
