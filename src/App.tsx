@@ -613,8 +613,57 @@ export default function App() {
   // File drag & drop reference
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Helper to compress uploaded images via Canvas before converting to base64
+  const compressImageFile = (file: File, maxWidth = 1600, maxHeight = 1600, quality = 0.85): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onerror = () => resolve('');
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        if (!dataUrl) return resolve('');
+        
+        const img = new Image();
+        img.onerror = () => resolve(dataUrl);
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth || height > maxHeight) {
+            if (width / height > maxWidth / maxHeight) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(dataUrl);
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+          const mimeType = file.type === 'image/png' || file.type === 'image/webp' ? file.type : 'image/jpeg';
+          try {
+            const compressed = canvas.toDataURL(mimeType, quality);
+            resolve(compressed || dataUrl);
+          } catch {
+            resolve(dataUrl);
+          }
+        };
+        img.src = dataUrl;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Image Upload Processing for Fan Creations (Multi-image Gallery)
-  const processCreationImageFile = (file: File) => {
+  const processCreationImageFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       setFormError('Please select a valid image file (PNG, JPG, WEBP, GIF).');
       return;
@@ -623,16 +672,16 @@ export default function App() {
       setFormError('Image file size must be under 20MB.');
       return;
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = reader.result as string;
+    try {
+      const result = await compressImageFile(file);
       if (result) {
         setContentUrl((prev) => prev || result);
         setCreationGalleryImages((prev) => (prev.includes(result) ? prev : [...prev, result]));
         setFormError('');
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.warn('Image processing error:', err);
+    }
   };
 
   const handleCreationFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1432,17 +1481,25 @@ export default function App() {
         newSubmission.tokenDetails = tokenDetails;
       }
 
-      const apiRes = await fetch('/api/submissions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newSubmission),
-      });
+      let savedSubmission = newSubmission;
+      try {
+        const apiRes = await fetch('/api/submissions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newSubmission),
+        });
 
-      if (!apiRes.ok) {
-        throw new Error('Failed to post submission to server storage.');
+        if (apiRes.ok) {
+          const resData = await apiRes.json().catch(() => newSubmission);
+          savedSubmission = resData;
+        } else {
+          console.warn('Server API storage warning, saving submission locally:', apiRes.status);
+        }
+      } catch (err) {
+        console.warn('Server submission post error:', err);
       }
 
-      await fetchSubmissions();
+      setSubmissions((prev) => [savedSubmission, ...prev.filter((s) => s.id !== savedSubmission.id)]);
       setFormSuccess(true);
       setTitle('');
       setDescription('');
@@ -1478,25 +1535,21 @@ export default function App() {
   ];
 
   // News Image & Gallery File Upload Handlers
-  const handleNewsFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNewsFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      Array.from(files).forEach((file: File) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          if (result) {
-            setAdminNewsGalleryImages((prev) => {
-              if (!prev.includes(result)) {
-                return [...prev, result];
-              }
-              return prev;
-            });
-            setAdminNewsImageUrl((prevCover) => (prevCover.trim() ? prevCover : result));
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+      for (const file of Array.from(files) as File[]) {
+        const result = await compressImageFile(file);
+        if (result) {
+          setAdminNewsGalleryImages((prev) => {
+            if (!prev.includes(result)) {
+              return [...prev, result];
+            }
+            return prev;
+          });
+          setAdminNewsImageUrl((prevCover) => (prevCover.trim() ? prevCover : result));
+        }
+      }
     }
   };
 

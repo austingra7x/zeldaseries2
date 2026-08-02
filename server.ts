@@ -19,8 +19,17 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
-// Enable JSON parser with sufficient limit for base64 screenshots
-app.use(express.json({ limit: '10mb' }));
+// Enable JSON and URL-encoded parser with 50mb limit for high-res images and multi-photo galleries
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Handle payload size limits gracefully
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err && (err.type === 'entity.too.large' || err.status === 413)) {
+    return res.status(413).json({ error: 'Uploaded payload is too large. Images are automatically compressed.' });
+  }
+  next(err);
+});
 
 // RSS Feed Fetcher for Google News Legend of Zelda Search
 const GOOGLE_NEWS_ZELDA_RSS = 'https://news.google.com/rss/search?q=legend+of+zelda&hl=en-US&gl=US&ceid=US:en';
