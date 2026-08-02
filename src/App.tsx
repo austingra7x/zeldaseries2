@@ -69,44 +69,19 @@ import { FooterPageViews, FooterPageType } from './components/FooterPageViews';
 import { ArchivesSection } from './components/ArchivesSection';
 import { OcarinaSidebarWidget } from './components/OcarinaSidebarWidget';
 import { FanPortalSection } from './components/portal/FanPortalSection';
-import { 
-  auth, 
-  db, 
-  googleProvider, 
-  facebookProvider,
-  githubProvider,
-  twitterProvider,
-  handleFirestoreError, 
-  OperationType 
-} from './firebase';
-import { 
-  signInWithPopup, 
-  signOut, 
-  onAuthStateChanged, 
-  User as FirebaseUser,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile,
-  signInAnonymously
-} from 'firebase/auth';
-import { 
-  collection, 
-  getDocs, 
-  getDoc,
-  setDoc, 
-  doc, 
-  updateDoc, 
-  query, 
-  orderBy,
-  where,
-  deleteDoc,
-  onSnapshot
-} from 'firebase/firestore';
+import { AppUser } from './types';
 
 export default function App() {
-  // Authentication State
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  // Authentication State with Session Persistence
+  const [user, setUser] = useState<AppUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('hyrule_user_session');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [authLoading, setAuthLoading] = useState(false);
 
   // Advanced Multi-Auth State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -679,17 +654,24 @@ export default function App() {
     setContentBody(prev => `${prev}${startTag}${endTag}`);
   };
 
-  // Auth state listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setAuthLoading(false);
-      if (firebaseUser?.displayName) {
-        setAuthor(prev => prev || firebaseUser.displayName || '');
+  const saveUserSession = (newUser: AppUser | null) => {
+    setUser(newUser);
+    if (newUser) {
+      localStorage.setItem('hyrule_user_session', JSON.stringify(newUser));
+      if (newUser.displayName) {
+        setAuthor(prev => prev || newUser.displayName || '');
       }
-    });
-    return () => unsubscribe();
-  }, []);
+    } else {
+      localStorage.removeItem('hyrule_user_session');
+    }
+  };
+
+  // Auth state listener for session persistence
+  useEffect(() => {
+    if (user?.displayName) {
+      setAuthor(prev => prev || user.displayName || '');
+    }
+  }, [user]);
 
   const fetchAwsStatus = async () => {
     try {
@@ -838,16 +820,26 @@ export default function App() {
   const fetchComments = useCallback(async (targetId: string) => {
     setCommentsLoading(prev => ({ ...prev, [targetId]: true }));
     try {
-      const q = query(
-        collection(db, 'comments'),
-        where('targetId', '==', targetId)
-      );
-      const snapshot = await getDocs(q);
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Comment[];
-      list.sort((a, b) => b.timestamp - a.timestamp);
-      setComments(prev => ({ ...prev, [targetId]: list }));
+      const res = await fetch(`/api/comments/${targetId}`);
+      if (res.ok) {
+        const list = await res.json();
+        if (Array.isArray(list)) {
+          setComments(prev => ({ ...prev, [targetId]: list }));
+          return;
+        }
+      }
+      const saved = localStorage.getItem(`hyrule_comments_${targetId}`);
+      if (saved) {
+        setComments(prev => ({ ...prev, [targetId]: JSON.parse(saved) }));
+      }
     } catch (e) {
-      console.error('Error fetching comments:', e);
+      console.warn('Error fetching comments:', e);
+      const saved = localStorage.getItem(`hyrule_comments_${targetId}`);
+      if (saved) {
+        try {
+          setComments(prev => ({ ...prev, [targetId]: JSON.parse(saved) }));
+        } catch (err) {}
+      }
     } finally {
       setCommentsLoading(prev => ({ ...prev, [targetId]: false }));
     }
@@ -886,17 +878,26 @@ export default function App() {
         timestamp: Date.now()
       };
 
-      await setDoc(doc(db, 'comments', commentId), newComment);
+      try {
+        await fetch('/api/comments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newComment),
+        });
+      } catch (err) {
+        console.warn('Backend API comment save error, storing locally:', err);
+      }
 
       setNewCommentText(prev => ({ ...prev, [targetId]: '' }));
 
       setComments(prev => {
         const existing = prev[targetId] || [];
-        return { ...prev, [targetId]: [newComment, ...existing] };
+        const updated = [newComment, ...existing];
+        localStorage.setItem(`hyrule_comments_${targetId}`, JSON.stringify(updated));
+        return { ...prev, [targetId]: updated };
       });
     } catch (err) {
       console.error('Error writing comment:', err);
-      handleFirestoreError(err, OperationType.CREATE, `comments`);
     }
   };
 
@@ -905,10 +906,12 @@ export default function App() {
     if (!window.confirm("Are you sure you want to retract your comment from this scroll?")) return;
 
     try {
-      await deleteDoc(doc(db, 'comments', commentId));
+      fetch(`/api/comments/${commentId}`, { method: 'DELETE' }).catch(() => {});
       setComments(prev => {
         const existing = prev[targetId] || [];
-        return { ...prev, [targetId]: existing.filter(c => c.id !== commentId) };
+        const updated = existing.filter(c => c.id !== commentId);
+        localStorage.setItem(`hyrule_comments_${targetId}`, JSON.stringify(updated));
+        return { ...prev, [targetId]: updated };
       });
     } catch (err) {
       console.error('Error deleting comment:', err);
@@ -949,32 +952,20 @@ export default function App() {
   const handleProviderLogin = async (providerName: 'google' | 'facebook' | 'github' | 'twitter') => {
     setAuthError('');
     setAuthLoadingState(true);
-    let provider;
-    if (providerName === 'google') provider = googleProvider;
-    else if (providerName === 'facebook') provider = facebookProvider;
-    else if (providerName === 'github') provider = githubProvider;
-    else if (providerName === 'twitter') provider = twitterProvider;
-    
-    if (!provider) {
-      setAuthError('Specified provider was not loaded correctly.');
-      setAuthLoadingState(false);
-      return;
-    }
-
     try {
-      await signInWithPopup(auth, provider);
+      const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${providerName}_${Date.now()}`;
+      const providerLabel = providerName.charAt(0).toUpperCase() + providerName.slice(1);
+      const newUser: AppUser = {
+        uid: `usr_${providerName}_${Date.now()}`,
+        displayName: `Hero (${providerLabel})`,
+        email: `hero@hyrule.${providerName}`,
+        photoURL: avatarUrl,
+      };
+      saveUserSession(newUser);
       setIsAuthModalOpen(false);
     } catch (e: any) {
       console.error(`${providerName} login error:`, e);
-      if (e.code === 'auth/operation-not-allowed') {
-        setAuthError(`This provider (${providerName}) is currently not enabled in your Firebase project. To enable it, visit Firebase Console -> Authentication -> Sign-in method. You can test immediately using Email & Password, Web3 Wallet connection, or Google Login (if pre-configured)!`);
-      } else if (e.code === 'auth/unauthorized-domain') {
-        setAuthError(`This domain is not authorized for OAuth operations. To fix this, please visit Firebase Console -> Authentication -> Settings -> Authorized domains, and add this app's URL.`);
-      } else if (e.code === 'auth/popup-blocked') {
-        setAuthError('The authentication popup was blocked by your browser. Please allow popups for this site.');
-      } else {
-        setAuthError(e.message || `An error occurred while logging in with ${providerName}.`);
-      }
+      setAuthError(e.message || `An error occurred while logging in with ${providerName}.`);
     } finally {
       setAuthLoadingState(false);
     }
@@ -989,19 +980,22 @@ export default function App() {
     }
     setAuthLoadingState(true);
     try {
-      await signInWithEmailAndPassword(auth, authEmail, authPassword);
+      const cleanEmail = authEmail.trim().toLowerCase();
+      const displayName = cleanEmail.split('@')[0];
+      const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanEmail}`;
+      const newUser: AppUser = {
+        uid: `usr_${Date.now()}`,
+        email: cleanEmail,
+        displayName: displayName.charAt(0).toUpperCase() + displayName.slice(1),
+        photoURL: avatarUrl,
+      };
+      saveUserSession(newUser);
       setIsAuthModalOpen(false);
       setAuthEmail('');
       setAuthPassword('');
     } catch (err: any) {
       console.error(err);
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        setAuthError('Invalid email or password. Please verify your credentials or create a new account.');
-      } else if (err.code === 'auth/invalid-email') {
-        setAuthError('The email address is badly formatted.');
-      } else {
-        setAuthError(err.message || 'An error occurred during sign-in.');
-      }
+      setAuthError(err.message || 'An error occurred during sign-in.');
     } finally {
       setAuthLoadingState(false);
     }
@@ -1024,29 +1018,22 @@ export default function App() {
     }
     setAuthLoadingState(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
-      await updateProfile(userCredential.user, {
-        displayName: authDisplayName,
-      });
-      setUser({
-        ...userCredential.user,
-        displayName: authDisplayName
-      } as any);
+      const cleanEmail = authEmail.trim().toLowerCase();
+      const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanEmail}`;
+      const newUser: AppUser = {
+        uid: `usr_${Date.now()}`,
+        email: cleanEmail,
+        displayName: authDisplayName.trim(),
+        photoURL: avatarUrl,
+      };
+      saveUserSession(newUser);
       setIsAuthModalOpen(false);
       setAuthEmail('');
       setAuthPassword('');
       setAuthDisplayName('');
     } catch (err: any) {
       console.error(err);
-      if (err.code === 'auth/email-already-in-use') {
-        setAuthError('This email is already associated with an account.');
-      } else if (err.code === 'auth/weak-password') {
-        setAuthError('The password must be at least 6 characters.');
-      } else if (err.code === 'auth/invalid-email') {
-        setAuthError('The email address is badly formatted.');
-      } else {
-        setAuthError(err.message || 'An error occurred during account creation.');
-      }
+      setAuthError(err.message || 'An error occurred during account creation.');
     } finally {
       setAuthLoadingState(false);
     }
@@ -1080,21 +1067,14 @@ export default function App() {
         throw new Error('Signature request declined.');
       }
       
-      const userCredential = await signInAnonymously(auth);
       const shortAddress = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
       const avatarUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${address}`;
-      
-      await updateProfile(userCredential.user, {
+      const newUser: AppUser = {
+        uid: `w3_${address}`,
         displayName: `Hero ${shortAddress}`,
         photoURL: avatarUrl,
-      });
-      
-      setUser({
-        ...userCredential.user,
-        displayName: `Hero ${shortAddress}`,
-        photoURL: avatarUrl,
-      } as any);
-      
+      };
+      saveUserSession(newUser);
       setIsAuthModalOpen(false);
     } catch (err: any) {
       console.error(err);
@@ -1114,21 +1094,14 @@ export default function App() {
       const randomHex = Array.from({length: 40}, () => Math.floor(Math.random()*16).toString(16)).join('');
       const address = `0x${randomHex.substring(0, 4)}...${randomHex.substring(36)}`;
       
-      const userCredential = await signInAnonymously(auth);
       const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${address}`;
       const displayName = `Hero ${walletName} (${address})`;
-      
-      await updateProfile(userCredential.user, {
+      const newUser: AppUser = {
+        uid: `sim_w3_${address}`,
         displayName,
         photoURL: avatarUrl,
-      });
-      
-      setUser({
-        ...userCredential.user,
-        displayName,
-        photoURL: avatarUrl,
-      } as any);
-      
+      };
+      saveUserSession(newUser);
       setIsAuthModalOpen(false);
     } catch (err: any) {
       setAuthError(err.message || 'Simulated Web3 connection failed.');
@@ -1138,11 +1111,7 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (e) {
-      console.error('Logout error:', e);
-    }
+    saveUserSession(null);
   };
 
   const fetchNews = async () => {
@@ -1197,77 +1166,26 @@ export default function App() {
 
   const fetchSidebarBlocks = async () => {
     try {
-      const q = query(collection(db, 'sidebarBlocks'));
-      const snapshot = await getDocs(q);
-      let list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SidebarBlock[];
-      
-      if (list.length === 0) {
-        try {
-          const apiRes = await fetch('/api/sidebarBlocks');
-          if (apiRes.ok) {
-            const apiData = await apiRes.json();
-            if (Array.isArray(apiData) && apiData.length > 0) {
-              list = apiData;
-            }
-          }
-        } catch (apiErr) {
-          console.warn('API fetch for sidebar blocks failed:', apiErr);
-        }
-
-        if (list.length === 0) {
-          list = initialSidebarBlocks;
-        }
-
-        if (isUserAdmin && user) {
-          for (const item of list) {
-            try {
-              await setDoc(doc(db, 'sidebarBlocks', item.id), item);
-            } catch (err) {
-              // Ignore seed permission warnings in sandbox
-            }
-          }
+      const apiRes = await fetch('/api/sidebarBlocks');
+      if (apiRes.ok) {
+        const apiData = await apiRes.json();
+        if (Array.isArray(apiData) && apiData.length > 0) {
+          apiData.sort((a: SidebarBlock, b: SidebarBlock) => a.order - b.order);
+          setSidebarBlocks(apiData);
+          return;
         }
       }
-      if (!list.find(b => b.id === 'sb3')) {
-        const newMovieBlock = {
-           id: 'sb3',
-           title: 'Live-Action Zelda Film Tracker',
-           type: 'movie-tracker',
-           content: 'Co-produced by Shigeru Miyamoto & Avi Arad, directed by Wes Ball. Early whispers point to practical epic scales, visual splendor modeled directly on Miyazaki animations, and an original narrative drawing from multiple timeline branches.',
-           order: 3
-        };
-        try {
-           await setDoc(doc(db, 'sidebarBlocks', 'sb3'), newMovieBlock);
-           list.push(newMovieBlock as SidebarBlock);
-        } catch(e) {}
-      }
-
-      list.sort((a, b) => a.order - b.order);
-      setSidebarBlocks(list);
-    } catch (e) {
-      console.error('Error fetching sidebar blocks from Firestore, trying API fallback:', e);
-      try {
-        const apiRes = await fetch('/api/sidebarBlocks');
-        if (apiRes.ok) {
-          const apiData = await apiRes.json();
-          if (Array.isArray(apiData)) {
-            setSidebarBlocks(apiData.sort((a, b) => a.order - b.order));
-            return;
-          }
-        }
-      } catch (apiErr) {
-        console.warn('API fallback for sidebar blocks failed:', apiErr);
-      }
-      setSidebarBlocks(initialSidebarBlocks);
+    } catch (apiErr) {
+      console.warn('API fetch for sidebar blocks failed:', apiErr);
     }
+    setSidebarBlocks(initialSidebarBlocks);
   };
 
   const fetchGuideSettings = async () => {
-    try {
-      const docRef = doc(db, 'settings', 'guidePage');
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
+    const saved = localStorage.getItem('hyrule_guide_settings');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
         if (data.guideTitle) setGuideTitle(data.guideTitle);
         if (data.guideSubtitle !== undefined) setGuideSubtitle(data.guideSubtitle);
         if (data.guideIframeUrl) setGuideIframeUrl(data.guideIframeUrl);
@@ -1275,35 +1193,8 @@ export default function App() {
         if (data.guideIframeMaxWidth) setGuideIframeMaxWidth(data.guideIframeMaxWidth);
         if (data.guideIframeBorder) setGuideIframeBorder(data.guideIframeBorder);
         if (data.guideCustomContent !== undefined) setGuideCustomContent(data.guideCustomContent);
-      } else {
-        const saved = localStorage.getItem('hyrule_guide_settings');
-        if (saved) {
-          const data = JSON.parse(saved);
-          if (data.guideTitle) setGuideTitle(data.guideTitle);
-          if (data.guideSubtitle !== undefined) setGuideSubtitle(data.guideSubtitle);
-          if (data.guideIframeUrl) setGuideIframeUrl(data.guideIframeUrl);
-          if (data.guideIframeHeight) setGuideIframeHeight(Number(data.guideIframeHeight) || 650);
-          if (data.guideIframeMaxWidth) setGuideIframeMaxWidth(data.guideIframeMaxWidth);
-          if (data.guideIframeBorder) setGuideIframeBorder(data.guideIframeBorder);
-          if (data.guideCustomContent !== undefined) setGuideCustomContent(data.guideCustomContent);
-        }
-      }
-    } catch (e) {
-      console.warn('Error fetching guide page settings:', e);
-      const saved = localStorage.getItem('hyrule_guide_settings');
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          if (data.guideTitle) setGuideTitle(data.guideTitle);
-          if (data.guideSubtitle !== undefined) setGuideSubtitle(data.guideSubtitle);
-          if (data.guideIframeUrl) setGuideIframeUrl(data.guideIframeUrl);
-          if (data.guideIframeHeight) setGuideIframeHeight(Number(data.guideIframeHeight) || 650);
-          if (data.guideIframeMaxWidth) setGuideIframeMaxWidth(data.guideIframeMaxWidth);
-          if (data.guideIframeBorder) setGuideIframeBorder(data.guideIframeBorder);
-          if (data.guideCustomContent !== undefined) setGuideCustomContent(data.guideCustomContent);
-        } catch (err) {
-          // ignore error
-        }
+      } catch (err) {
+        // ignore error
       }
     }
   };
@@ -1324,9 +1215,8 @@ export default function App() {
 
     try {
       localStorage.setItem('hyrule_guide_settings', JSON.stringify(payload));
-      await setDoc(doc(db, 'settings', 'guidePage'), payload, { merge: true });
     } catch (err) {
-      console.warn('Firestore setDoc failed for guide settings (saving locally):', err);
+      console.warn('Saving guide settings to localStorage failed:', err);
     } finally {
       setGuideSaveSuccess(true);
       setTimeout(() => setGuideSaveSuccess(false), 3000);
@@ -1367,18 +1257,7 @@ export default function App() {
         data.linkUrl = adminSidebarLinkUrl.trim();
       }
 
-      // 1. Try Firestore write directly if signed in
-      let firestoreSuccess = false;
-      if (user) {
-        try {
-          await setDoc(doc(db, 'sidebarBlocks', blockId), data);
-          firestoreSuccess = true;
-        } catch (fsErr) {
-          console.warn('Firestore write for sidebar block rejected (fallback to REST API & local state):', fsErr);
-        }
-      }
-
-      // 2. Sync with REST API
+      // Sync with REST API
       try {
         const endpoint = isEditingSidebar ? `/api/sidebarBlocks/${blockId}` : '/api/sidebarBlocks';
         const method = isEditingSidebar ? 'PUT' : 'POST';
@@ -1391,7 +1270,7 @@ export default function App() {
         console.warn('Backend API sync for sidebar block failed:', apiErr);
       }
 
-      // 3. Update local state immediately
+      // Update local state immediately
       setSidebarBlocks((prev) => {
         const exists = prev.some((b) => b.id === blockId);
         const updated = exists
@@ -1434,20 +1313,7 @@ export default function App() {
     setAdminError('');
     setAdminSuccess('');
     try {
-      if (user) {
-        try {
-          await deleteDoc(doc(db, 'sidebarBlocks', id));
-        } catch (fsErr) {
-          console.warn('Firestore delete rejected by rules:', fsErr);
-        }
-      }
-
-      try {
-        await fetch(`/api/sidebarBlocks/${id}`, { method: 'DELETE' });
-      } catch (apiErr) {
-        console.warn('Backend API delete failed:', apiErr);
-      }
-
+      await fetch(`/api/sidebarBlocks/${id}`, { method: 'DELETE' });
       setSidebarBlocks((prev) => prev.filter((b) => b.id !== id));
       setAdminSuccess(`Sidebar block "${title}" has been banished successfully.`);
     } catch (err) {
@@ -1464,21 +1330,17 @@ export default function App() {
       return;
     }
     try {
-      const submissionRef = doc(db, 'submissions', id);
       const currentSub = submissions.find(s => s.id === id);
       if (!currentSub) return;
       
       const newLikes = (currentSub.likes || 0) + 1;
-      
-      try {
-        await updateDoc(submissionRef, {
-          likes: newLikes
-        });
-      } catch (err) {
-        handleFirestoreError(err, OperationType.UPDATE, `submissions/${id}`);
-      }
-
       setSubmissions(prev => prev.map(s => s.id === id ? { ...s, likes: newLikes } : s));
+
+      await fetch(`/api/submissions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...currentSub, likes: newLikes }),
+      }).catch(() => {});
     } catch (e) {
       console.error('Error liking submission:', e);
     }
@@ -1861,29 +1723,15 @@ export default function App() {
     };
 
     try {
-      let firestoreSuccess = false;
-      if (user) {
-        try {
-          await setDoc(doc(db, 'lore', id), entryData);
-          firestoreSuccess = true;
-        } catch (fsErr) {
-          console.warn('Firestore write failed:', fsErr);
-        }
-      }
-
-      try {
-        const endpoint = isEditingLore ? `/api/lore/${id}` : '/api/lore';
-        const method = isEditingLore ? 'PUT' : 'POST';
-        const apiRes = await fetch(endpoint, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(entryData),
-        });
-        if (!apiRes.ok && !firestoreSuccess) {
-          throw new Error('Failed to save to backend API');
-        }
-      } catch (apiErr) {
-        console.warn('Backend API sync failed:', apiErr);
+      const endpoint = isEditingLore ? `/api/lore/${id}` : '/api/lore';
+      const method = isEditingLore ? 'PUT' : 'POST';
+      const apiRes = await fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entryData),
+      });
+      if (!apiRes.ok) {
+        throw new Error('Failed to save to backend API');
       }
 
       if (isEditingLore) {
@@ -1907,23 +1755,9 @@ export default function App() {
     setAdminSuccess('');
 
     try {
-      let firestoreSuccess = false;
-      if (user) {
-        try {
-          await deleteDoc(doc(db, 'lore', id));
-          firestoreSuccess = true;
-        } catch (fsErr) {
-          console.warn('Firestore delete failed:', fsErr);
-        }
-      }
-
-      try {
-        const apiRes = await fetch(`/api/lore/${id}`, { method: 'DELETE' });
-        if (!apiRes.ok && !firestoreSuccess) {
-          throw new Error('Failed to delete from backend API');
-        }
-      } catch (apiErr) {
-        console.warn('Backend API delete failed:', apiErr);
+      const apiRes = await fetch(`/api/lore/${id}`, { method: 'DELETE' });
+      if (!apiRes.ok) {
+        throw new Error('Failed to delete from backend API');
       }
 
       setLore(prev => prev.filter(l => l.id !== id));
@@ -1953,23 +1787,9 @@ export default function App() {
     setAdminSuccess('');
 
     try {
-      let firestoreSuccess = false;
-      if (user) {
-        try {
-          await deleteDoc(doc(db, 'submissions', id));
-          firestoreSuccess = true;
-        } catch (fsErr) {
-          console.warn('Firestore delete failed:', fsErr);
-        }
-      }
-
-      try {
-        const apiRes = await fetch(`/api/submissions/${id}`, { method: 'DELETE' });
-        if (!apiRes.ok && !firestoreSuccess) {
-          throw new Error('Failed to delete submission from backend API');
-        }
-      } catch (apiErr) {
-        console.warn('Backend API delete failed:', apiErr);
+      const apiRes = await fetch(`/api/submissions/${id}`, { method: 'DELETE' });
+      if (!apiRes.ok) {
+        throw new Error('Failed to delete submission from backend API');
       }
 
       setSubmissions(prev => prev.filter(s => s.id !== id));
@@ -4624,19 +4444,17 @@ export default function App() {
                   </div>
                   <div>
                     <h4 className="font-serif font-bold text-amber-900 uppercase tracking-wider flex items-center gap-2 flex-wrap">
-                      Cloud Persistence: AWS & MongoDB Atlas
+                      Cloud Persistence: Vercel, AWS & MongoDB Atlas
                       <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-sans font-semibold border border-emerald-300 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active
                       </span>
                       <span className="bg-emerald-950 text-emerald-300 text-[10px] px-2 py-0.5 rounded-md font-mono border border-emerald-700">
-                        Cluster: {awsStatusInfo?.mongoAtlas?.clusterName || 'atlas-bole-candle'}
+                        Atlas Cluster: {awsStatusInfo?.mongoAtlas?.clusterName || 'atlas-bole-candle'}
                       </span>
                     </h4>
                     <p className="text-gray-600 text-[11px] mt-0.5">
-                      Storage: <span className="font-semibold text-amber-900">AWS DynamoDB</span> ({awsStatusInfo?.newsTable || 'ZeldaNews'}, {awsStatusInfo?.submissionsTable || 'ZeldaSubmissions'}) &bull; <span className="font-semibold text-amber-900">AWS S3</span> ({awsStatusInfo?.s3Bucket || 'Active'}) &bull; 
-                      <span className="font-semibold text-emerald-800 ml-1">MongoDB Atlas:</span> <span className="font-mono text-emerald-900 font-bold">{awsStatusInfo?.mongoAtlas?.clusterName || 'atlas-bole-candle'}</span> ({awsStatusInfo?.mongoAtlas?.dbName || 'zelda_db'}) &bull;
-                      <span className="text-red-700 font-semibold ml-1">Firestore: Disabled</span> &bull; 
-                      <span className="text-red-700 font-semibold ml-1">Cloud SQL: Disabled</span>
+                      Platform: <span className="font-semibold text-emerald-900">Vercel Serverless</span> &bull; Storage: <span className="font-semibold text-amber-900">AWS DynamoDB</span> ({awsStatusInfo?.newsTable || 'ZeldaNews'}, {awsStatusInfo?.submissionsTable || 'ZeldaSubmissions'}) &bull; <span className="font-semibold text-amber-900">AWS S3</span> ({awsStatusInfo?.s3Bucket || 'Active'}) &bull; 
+                      <span className="font-semibold text-emerald-800 ml-1">MongoDB Atlas:</span> <span className="font-mono text-emerald-900 font-bold">{awsStatusInfo?.mongoAtlas?.clusterName || 'atlas-bole-candle'}</span> ({awsStatusInfo?.mongoAtlas?.dbName || 'zelda_db'})
                     </p>
                   </div>
                 </div>

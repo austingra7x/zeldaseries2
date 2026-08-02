@@ -1,13 +1,12 @@
 import React, { useEffect } from 'react';
 import { MessageSquare, Send, Trash2, User } from 'lucide-react';
-import { Comment } from '../types';
-import { User as FirebaseUser } from 'firebase/auth';
+import { Comment, AppUser } from '../types';
 
 export interface CommentsSectionProps {
   targetId: string;
   targetType: 'news' | 'lore' | 'submission';
-  user?: FirebaseUser | null;
-  currentUser?: FirebaseUser | null;
+  user?: AppUser | null;
+  currentUser?: AppUser | null;
   comments?: Record<string, Comment[]>;
   commentsLoading?: Record<string, boolean>;
   newCommentText?: Record<string, string>;

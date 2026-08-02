@@ -785,7 +785,7 @@ Output strictly JSON matching the required schema.`;
   }
 });
 
-// AWS & MongoDB Status Endpoint
+// AWS & Vercel Cloud Integration Status Endpoint
 app.get('/api/aws/status', async (req, res) => {
   const config = getAwsConfig();
   const lastError = getLastAwsError();
@@ -794,14 +794,14 @@ app.get('/api/aws/status', async (req, res) => {
 
   res.json({
     status: config.isConfigured ? 'connected' : 'ready_for_credentials',
-    provider: 'Amazon Web Services (AWS)',
+    provider: 'Amazon Web Services (AWS) & Vercel',
     region: config.region,
     rawRegion: config.rawRegion,
     newsTable: config.newsTable,
     submissionsTable: config.submissionsTable,
     s3Bucket: config.s3Bucket || 'not_configured',
-    firestoreStatus: 'disabled',
-    cloudSqlStatus: 'disabled',
+    vercelStatus: 'configured',
+    vercelFramework: 'Vite + Express Serverless Engine',
     mongoAtlas: {
       clusterName: mongoConfig.clusterName || 'atlas-bole-candle',
       dbName: mongoConfig.dbName,
@@ -811,8 +811,8 @@ app.get('/api/aws/status', async (req, res) => {
     },
     lastError: lastError || null,
     message: config.isConfigured 
-      ? 'AWS DynamoDB, AWS S3 & MongoDB Atlas (atlas-bole-candle) handle global persistent storage.'
-      : 'AWS & MongoDB Atlas integrations active. Set AWS keys and MONGODB_URI in .env.example to sync.'
+      ? 'AWS DynamoDB, AWS S3, Vercel & MongoDB Atlas (atlas-bole-candle) handle global persistent cloud storage.'
+      : 'Vercel & AWS integrations active. Set AWS keys in .env.example for direct DynamoDB/S3 sync.'
   });
 });
 

@@ -12,8 +12,6 @@ import {
   Check,
   Zap
 } from 'lucide-react';
-import { db } from '../../firebase';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, limit } from 'firebase/firestore';
 
 export interface ChatMessage {
   id: string;
@@ -86,43 +84,6 @@ export function FanChatRoom() {
   
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
-  // Firestore Real-Time Chat sync with local storage fallback
-  useEffect(() => {
-    try {
-      const q = query(
-        collection(db, 'hyrule_fan_chat'),
-        orderBy('createdAt', 'desc'),
-        limit(50)
-      );
-
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        if (!snapshot.empty) {
-          const loaded: ChatMessage[] = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              senderName: data.senderName || 'Anonymous Hero',
-              avatarIcon: data.avatarIcon || '🗡️',
-              badge: data.badge || 'Traveler',
-              text: data.text || '',
-              timestamp: data.createdAt?.toDate ? data.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
-              timeMs: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : Date.now(),
-            };
-          }).reverse();
-
-          setMessages(loaded);
-          localStorage.setItem('zelda_chat_messages_local_v1', JSON.stringify(loaded));
-        }
-      }, (error) => {
-        console.log("Firestore chat offline fallback", error);
-      });
-
-      return () => unsubscribe();
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
-
   // Auto-scroll to bottom on message
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -154,20 +115,7 @@ export function FanChatRoom() {
       return next;
     });
 
-    // Attempt firestore write
-    try {
-      await addDoc(collection(db, 'hyrule_fan_chat'), {
-        senderName: newMessage.senderName,
-        avatarIcon: newMessage.avatarIcon,
-        badge: newMessage.badge,
-        text: newMessage.text,
-        createdAt: serverTimestamp(),
-      });
-    } catch (e) {
-      console.log("Chat saved locally", e);
-    } finally {
-      setIsPosting(false);
-    }
+    setIsPosting(false);
   };
 
   const addQuickEmoji = (emoji: string) => {
