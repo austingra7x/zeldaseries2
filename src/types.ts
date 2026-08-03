@@ -3,11 +3,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+export type UserRole = 'admin' | 'editor' | 'moderator' | 'user';
+
+export interface RolePermissions {
+  canManageNews: boolean;
+  canManageLore: boolean;
+  canModerateContent: boolean;
+  canManageUsers: boolean;
+  canManageSidebar: boolean;
+}
+
+export interface PlatformUser {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  role: UserRole;
+  permissions: RolePermissions;
+  lastActive: string;
+  joinedDate: string;
+  status: 'active' | 'suspended';
+}
+
 export interface AppUser {
   uid: string;
   email?: string | null;
   displayName?: string | null;
   photoURL?: string | null;
+  role?: UserRole;
 }
 
 export interface NewsItem {

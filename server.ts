@@ -9,7 +9,7 @@ import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
 import Parser from 'rss-parser';
-import { NewsItem, LoreEntry, UserSubmission, TokenDetails, SidebarBlock, RssFeedItem, GeneratedSeoNews } from './src/types';
+import { NewsItem, LoreEntry, UserSubmission, TokenDetails, SidebarBlock, RssFeedItem, GeneratedSeoNews, PlatformUser, UserRole, RolePermissions } from './src/types';
 import { getAwsConfig, scanDynamoTable, putDynamoItem, deleteDynamoItem, uploadToS3, getLastAwsError } from './src/lib/aws';
 import { getMongoConfig, getLastMongoError, mongoFind, mongoUpsert, mongoDelete } from './src/lib/mongo';
 
@@ -470,6 +470,102 @@ const sidebarDatabase: SidebarBlock[] = [
   }
 ];
 
+function getDefaultPermissionsForRole(role: UserRole): RolePermissions {
+  switch (role) {
+    case 'admin':
+      return {
+        canManageNews: true,
+        canManageLore: true,
+        canModerateContent: true,
+        canManageUsers: true,
+        canManageSidebar: true,
+      };
+    case 'editor':
+      return {
+        canManageNews: true,
+        canManageLore: true,
+        canModerateContent: false,
+        canManageUsers: false,
+        canManageSidebar: true,
+      };
+    case 'moderator':
+      return {
+        canManageNews: false,
+        canManageLore: false,
+        canModerateContent: true,
+        canManageUsers: false,
+        canManageSidebar: false,
+      };
+    case 'user':
+    default:
+      return {
+        canManageNews: false,
+        canManageLore: false,
+        canModerateContent: false,
+        canManageUsers: false,
+        canManageSidebar: false,
+      };
+  }
+}
+
+let usersDatabase: PlatformUser[] = [
+  {
+    uid: 'u_admin_1',
+    email: 'AustinGrA7X@gmail.com',
+    displayName: 'Austin (Grand Master Admin)',
+    photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+    role: 'admin',
+    permissions: getDefaultPermissionsForRole('admin'),
+    lastActive: new Date().toISOString(),
+    joinedDate: '2026-01-01',
+    status: 'active',
+  },
+  {
+    uid: 'u_editor_1',
+    email: 'impa@hyrulecourt.gov',
+    displayName: 'Impa (Royal Chief Editor)',
+    photoURL: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80',
+    role: 'editor',
+    permissions: getDefaultPermissionsForRole('editor'),
+    lastActive: new Date(Date.now() - 86400000 * 2).toISOString(),
+    joinedDate: '2026-02-14',
+    status: 'active',
+  },
+  {
+    uid: 'u_mod_1',
+    email: 'daruk@goroncity.org',
+    displayName: 'Daruk (Chief Moderator)',
+    photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    role: 'moderator',
+    permissions: getDefaultPermissionsForRole('moderator'),
+    lastActive: new Date(Date.now() - 3600000 * 4).toISOString(),
+    joinedDate: '2026-03-01',
+    status: 'active',
+  },
+  {
+    uid: 'u_editor_2',
+    email: 'purah@sheikahlab.tech',
+    displayName: 'Purah (Lead Tech Journalist)',
+    photoURL: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80',
+    role: 'editor',
+    permissions: getDefaultPermissionsForRole('editor'),
+    lastActive: new Date(Date.now() - 3600000 * 12).toISOString(),
+    joinedDate: '2026-03-15',
+    status: 'active',
+  },
+  {
+    uid: 'u_user_1',
+    email: 'beedle@terrytown.shop',
+    displayName: 'Wandering Merchant Beedle',
+    photoURL: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+    role: 'user',
+    permissions: getDefaultPermissionsForRole('user'),
+    lastActive: new Date(Date.now() - 86400000 * 5).toISOString(),
+    joinedDate: '2026-04-10',
+    status: 'active',
+  }
+];
+
 // API Routes
 
 // Sidebar Blocks Routes
@@ -527,6 +623,99 @@ app.delete('/api/sidebarBlocks/:id', (req, res) => {
     sidebarDatabase.splice(index, 1);
   }
   res.json({ success: true, id });
+});
+
+// User Permissions & Role Management Routes (Admin Sanctum)
+app.get('/api/users', (req, res) => {
+  res.json(usersDatabase);
+});
+
+app.post('/api/users', (req, res) => {
+  const { email, displayName, role, permissions, photoURL } = req.body;
+  if (!email || !displayName) {
+    return res.status(400).json({ error: 'Email and Display Name are required.' });
+  }
+
+  const assignedRole: UserRole = role && ['admin', 'editor', 'moderator', 'user'].includes(role) ? role : 'user';
+  const defaultPerms = getDefaultPermissionsForRole(assignedRole);
+  const finalPermissions: RolePermissions = {
+    ...defaultPerms,
+    ...(permissions || {}),
+  };
+
+  const existingIndex = usersDatabase.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+  if (existingIndex >= 0) {
+    usersDatabase[existingIndex] = {
+      ...usersDatabase[existingIndex],
+      displayName,
+      role: assignedRole,
+      permissions: finalPermissions,
+      photoURL: photoURL || usersDatabase[existingIndex].photoURL,
+      lastActive: new Date().toISOString(),
+    };
+    return res.json(usersDatabase[existingIndex]);
+  }
+
+  const newUser: PlatformUser = {
+    uid: `u_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    email,
+    displayName,
+    photoURL: photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(displayName)}`,
+    role: assignedRole,
+    permissions: finalPermissions,
+    lastActive: new Date().toISOString(),
+    joinedDate: new Date().toISOString().split('T')[0],
+    status: 'active',
+  };
+
+  usersDatabase.unshift(newUser);
+  res.status(201).json(newUser);
+});
+
+app.put('/api/users/:uid/role', (req, res) => {
+  const { uid } = req.params;
+  const { role, permissions, status, displayName } = req.body;
+
+  const userIndex = usersDatabase.findIndex(u => u.uid === uid || u.email.toLowerCase() === uid.toLowerCase());
+  if (userIndex === -1) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const current = usersDatabase[userIndex];
+  const newRole: UserRole = role && ['admin', 'editor', 'moderator', 'user'].includes(role) ? role : current.role;
+  
+  // If role was changed and no explicit custom permissions provided, auto-sync default permissions for that role
+  let newPermissions = current.permissions;
+  if (role && role !== current.role && !permissions) {
+    newPermissions = getDefaultPermissionsForRole(newRole);
+  } else if (permissions) {
+    newPermissions = {
+      ...current.permissions,
+      ...permissions,
+    };
+  }
+
+  usersDatabase[userIndex] = {
+    ...current,
+    displayName: displayName || current.displayName,
+    role: newRole,
+    permissions: newPermissions,
+    status: status === 'suspended' ? 'suspended' : 'active',
+    lastActive: new Date().toISOString(),
+  };
+
+  res.json(usersDatabase[userIndex]);
+});
+
+app.delete('/api/users/:uid', (req, res) => {
+  const { uid } = req.params;
+  const userIndex = usersDatabase.findIndex(u => u.uid === uid || u.email.toLowerCase() === uid.toLowerCase());
+  if (userIndex === -1) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  usersDatabase.splice(userIndex, 1);
+  res.json({ success: true, message: 'User removed from roster' });
 });
 
 // Get Live RSS Feed for Legend of Zelda

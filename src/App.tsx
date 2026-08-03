@@ -69,6 +69,7 @@ import { FooterPageViews, FooterPageType } from './components/FooterPageViews';
 import { ArchivesSection } from './components/ArchivesSection';
 import { OcarinaSidebarWidget } from './components/OcarinaSidebarWidget';
 import { FanPortalSection } from './components/portal/FanPortalSection';
+import { UserRolesManager } from './components/admin/UserRolesManager';
 import { AppUser } from './types';
 
 export default function App() {
@@ -476,7 +477,7 @@ export default function App() {
   // Admin Dashboard State
   const [adminSandbox, setAdminSandbox] = useState<boolean>(false);
   const isUserAdmin = !!user?.email && (user.email === 'AustinGrA7X@gmail.com' || adminSandbox) || adminSandbox;
-  const [adminTab, setAdminTab] = useState<'news' | 'lore' | 'submissions' | 'sidebar' | 'rss-generator'>('news');
+  const [adminTab, setAdminTab] = useState<'news' | 'lore' | 'submissions' | 'sidebar' | 'rss-generator' | 'roles'>('news');
   const [adminError, setAdminError] = useState<string>('');
   const [adminSuccess, setAdminSuccess] = useState<string>('');
 
@@ -4620,6 +4621,16 @@ export default function App() {
               >
                 📡 Real-Time RSS News Generator (SEO & E-E-A-T)
               </button>
+              <button
+                onClick={() => setAdminTab('roles')}
+                className={`px-5 py-2.5 rounded-t-lg font-serif text-xs uppercase tracking-wider font-semibold transition-all cursor-pointer border-t border-x ${
+                  adminTab === 'roles'
+                    ? 'bg-white border-zelda-border-sand text-zelda-gold font-bold shadow-sm'
+                    : 'bg-black/10 border-transparent text-zelda-charcoal/60 hover:text-zelda-charcoal'
+                }`}
+              >
+                👥 Roles & Permissions
+              </button>
             </div>
 
             {/* Notifications Panel */}
@@ -5532,6 +5543,11 @@ export default function App() {
             {/* ADMIN SUB-TAB 5: REAL-TIME RSS NEWS GENERATOR */}
             {adminTab === 'rss-generator' && (
               <RssNewsGeneratorSection onPublishNews={handlePublishGeneratedNews} />
+            )}
+
+            {/* ADMIN SUB-TAB 6: USER ROLES & PERMISSIONS */}
+            {adminTab === 'roles' && (
+              <UserRolesManager currentAdminEmail={user?.email} />
             )}
           </motion.div>
         )}
