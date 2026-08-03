@@ -55,7 +55,10 @@ export const RssNewsGeneratorSection: React.FC<RssNewsGeneratorSectionProps> = (
     setFeedError(null);
     try {
       const res = await fetch('/api/rss-news/feed');
-      if (!res.ok) throw new Error('Failed to fetch Google News RSS feed');
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok || !contentType.includes('application/json')) {
+        throw new Error('Server returned non-JSON response while fetching RSS feed. Please refresh in a moment.');
+      }
       const data = await res.json();
       setFeedItems(data.items || []);
       setFeedUrl(data.feedUrl || feedUrl);

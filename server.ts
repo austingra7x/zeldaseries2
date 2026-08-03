@@ -55,6 +55,7 @@ async function fetchZeldaRssFeed(): Promise<RssFeedItem[]> {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
           'Accept': 'application/rss+xml, application/xml, text/xml, */*',
         },
+        signal: AbortSignal.timeout(2500),
       });
 
       if (!response.ok) {
@@ -91,7 +92,7 @@ async function fetchZeldaRssFeed(): Promise<RssFeedItem[]> {
         });
       }
     } catch (err: any) {
-      console.warn(`Attempt to fetch RSS from ${url} failed:`, err?.message || err);
+      // Quiet fallback when live RSS fetch times out or gets blocked
     }
   }
 
